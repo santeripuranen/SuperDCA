@@ -49,7 +49,7 @@ public:
 	using iterator_category = std::forward_iterator_tag;
 	using difference_type = std::ptrdiff_t; //almost always ptrdiff_t
 
-	using my_type = Alignment_iterator_impl_base<DerivedT,StateVectorT;
+	using my_type = Alignment_iterator_impl_base<DerivedT,StateVectorT>;
 
 	using interface_t = Alignment_iterator_impl< StateVectorT >;
 	using iterator = interface_t;

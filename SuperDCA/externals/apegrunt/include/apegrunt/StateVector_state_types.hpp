@@ -182,7 +182,7 @@ enum struct biallelic_state_t : uint8_t
 template<> struct number_of_states<biallelic_state_t> { enum { N=3, value=3 }; };
 
 template<>
-bi_allelic_state_t char_to_state<biallelic_state_t>( char nucleotide )
+biallelic_state_t char_to_state<biallelic_state_t>( char nucleotide )
 {
 	using state_t = biallelic_state_t;
 	switch( std::tolower(nucleotide) )

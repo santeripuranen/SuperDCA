@@ -63,9 +63,12 @@ const std::string Apegrunt_options::s_title_string(
 	  std::string("Apegrunt: A library for parsing, processing and storing alignments of categorical variables.\n")
 );
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 const std::string Apegrunt_options::s_version_string(
 	std::string("Apegrunt version ") + std::to_string(Apegrunt_version::s_MajorVersion) + "." + std::to_string(Apegrunt_version::s_MinorVersion) + "." + std::to_string(Apegrunt_version::s_SubminorVersion)
-	+ " revision " + std::string(GIT_BRANCH) + "-" + std::string(GIT_COMMIT_HASH) + " / " +
+	+ " revision " + TOSTRING(GIT_BRANCH) + "-" + TOSTRING(GIT_COMMIT_HASH) + " / " +
 #ifdef __AVX2__
 	"AVX2"
 #elif __AVX__

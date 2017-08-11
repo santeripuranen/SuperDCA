@@ -44,7 +44,6 @@
 #include "Alignment_iterator_impl_block_compressed_storage.hpp"
 
 #include "State_block.hpp"
-#include "Index_block.hpp"
 
 namespace apegrunt {
 

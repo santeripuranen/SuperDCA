@@ -60,9 +60,12 @@ const std::string SuperDCA_options::s_usage_string(
 	  std::string("Usage: SuperDCA") /*+ std::string(argv[0])*/ + " [options] <alignmentfile> [-o <outputfile>]\nOption '--help' will print a list of available options.\n"
 );
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 const std::string SuperDCA_options::s_version_string(
 	std::string("SuperDCA version ") + std::to_string(SuperDCA_version::s_MajorVersion) + "." + std::to_string(SuperDCA_version::s_MinorVersion) + "." + std::to_string(SuperDCA_version::s_SubminorVersion)
-	+ " revision " + std::string(GIT_BRANCH) + "-" + std::string(GIT_COMMIT_HASH) + " / " +
+	+ " revision " + TOSTRING(GIT_BRANCH) + "-" + TOSTRING(GIT_COMMIT_HASH) + " / " +
 #ifdef __AVX2__
 	"AVX2"
 #elif __AVX__
