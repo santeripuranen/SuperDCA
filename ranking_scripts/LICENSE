@@ -1,7 +1,6 @@
-SuperDCA implements the pseudo-likelihood maximization direct coupling analysis -algorithm (plmDCA)
-for inferring couplings in aligned categorical data sets.
+phyl.ranking.function.R - An R-function for phylogenetic ranking of statistical couplings in a genome
 
-Copyright (c) 2016-2017 Santeri Puranen.
+Copyright (c) 2016-2017 Maiju Pesonen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
