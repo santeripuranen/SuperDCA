@@ -2,7 +2,7 @@
 
 ## Get the code
 ```
-git clone --recursive git@github.com:santeripuranen/SuperDCA.git
+git clone --recursive https://github.com/santeripuranen/SuperDCA.git
 ```
 
 ## About

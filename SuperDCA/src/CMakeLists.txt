@@ -32,7 +32,6 @@ set( SUPERDCA_SOURCES
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 
-superdca_target_message( "SuperDCA" )
 if( SUPERDCA_SOURCES )
 	add_executable( SuperDCA
 		SuperDCA.cpp
