@@ -1,3 +1,6 @@
 [submodule "SuperDCA/externals/vecmathlib"]
 	path = SuperDCA/externals/vecmathlib
 	url = https://bitbucket.org/eschnett/vecmathlib.git
+[submodule "SuperDCA/externals/CppNumericalSolvers"]
+	path = SuperDCA/externals/CppNumericalSolvers
+	url = https://github.com/PatWie/CppNumericalSolvers.git
