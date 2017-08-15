@@ -27,7 +27,7 @@ The SuperDCA code is written in C++ and wrapped into a [CMake](https://cmake.org
 
 You may need to set the [`CMAKE_MODULE_PATH`](https://cmake.org/cmake/help/latest/variable/CMAKE_MODULE_PATH.html) environment variable in order for CMake to find all relevant packages.
 
-In addition, SuperDCA depends on the following external libraries that are currently supplied along with the SuperDCA project, since they contain minor modifications to the original codes:
+In addition, SuperDCA depends on the following external libraries (with minor modifications) that came along with the SuperDCA project if you cloned it with `git clone --recursive`:
 
 * [CppNumericalSolvers](https://github.com/PatWie/CppNumericalSolvers) for the LBFGS function optimizer
 * [vecmathlib](https://bitbucket.org/eschnett/vecmathlib/wiki/Home) for vectorized math functions

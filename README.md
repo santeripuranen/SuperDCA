@@ -1,5 +1,10 @@
 # SuperDCA
 
+## Get the code
+```
+git clone --recursive git@github.com:santeripuranen/SuperDCA.git
+```
+
 ## About
 
 SuperDCA is a tool for global direct couplings analysis (DCA) of input genome alignments.
