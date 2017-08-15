@@ -13,15 +13,15 @@ SuperDCA is a tool for global direct couplings analysis (DCA) of input genome al
 
 ## Basic usage
 
+Use `SuperDCA -h` or `SuperDCA --help` to get a list of available command line options.
+
 To run SuperDCA with default settings use:
 ```
-SuperDCA -v *<input genome alignment>*
+SuperDCA -v <name of input genome alignment file>
 ```
 where the input alignment should be in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format).
 
 The main output file (*.out*) of SuperDCA contains a white space delimited, unsorted list of coupling values and pairs of position indices (using *1-based indexing* by default) relative to the columns in the input alignment.
-
-Use `SuperDCA -h` or `SuperDCA --help` to get a list of available command line options.
 
 ## Cite
 
