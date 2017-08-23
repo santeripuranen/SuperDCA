@@ -161,15 +161,6 @@ char state_to_char<nucleic_acid_state_t>( nucleic_acid_state_t state )
 	}
 }
 
-static std::array<nucleic_acid_state_t, number_of_states<nucleic_acid_state_t>::value > nucleic_acid_state_complement =
-{
-	nucleic_acid_state_t::t,
-	nucleic_acid_state_t::a,
-	nucleic_acid_state_t::g,
-	nucleic_acid_state_t::c,
-	nucleic_acid_state_t::GAP
-};
-
 // Major/minor nucleic acid states
 
 enum struct biallelic_state_t : uint8_t
@@ -242,7 +233,7 @@ char state_to_char<triallelic_state_t>( triallelic_state_t state )
 		default : return '-';
 	}
 }
-
+/*
 // Amino acid states
 
 enum struct amino_acid_state_t : uint8_t
@@ -317,7 +308,7 @@ char state_to_char<amino_acid_state_t>( amino_acid_state_t state )
 		default : return '-';
 	}
 }
-
+*/
 } // namespace apegrunt
 
 #endif // APEGRUNT_STATEVECTOR_STATE_TYPES_HPP
