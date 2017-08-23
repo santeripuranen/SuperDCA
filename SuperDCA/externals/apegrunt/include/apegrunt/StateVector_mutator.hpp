@@ -32,7 +32,7 @@ class StateVector_mutator
 {
 public:
 	StateVector_mutator( StateVectorT *statevector ) : m_statevector(statevector) { }
-	~StateVector_mutator() { }
+	~StateVector_mutator() { m_statevector->flush_block_buffer(); }
 
 	template< typename StateT >
 	void operator()( StateT state ) { m_statevector->push_back( state ); }
