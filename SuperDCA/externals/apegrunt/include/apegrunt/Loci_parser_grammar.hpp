@@ -55,6 +55,11 @@ struct Loci_parser_grammar
 	using loci_t = LociT;
 	using loci_ptr_t = std::shared_ptr<loci_t>;
 
+	// Explicit member function pointer signatures; used for the static cast below, in order for function
+	// pointer signatures to be properly resolved when compiling with gcc against boost >1.62.0
+	typedef void (loci_t::*push_back)(std::size_t locus, std::size_t base);
+	typedef void (loci_t::*push_back_range)(std::size_t locus_begin, std::size_t locus_end, std::size_t base);
+
 	explicit Loci_parser_grammar( std::size_t base_index=1 )
 		: Loci_parser_grammar::base_type(start, "Loci_parser_grammar"), m_base_index(base_index)
 	{
@@ -63,10 +68,10 @@ struct Loci_parser_grammar
 		//loci_count %= qi::_int
 		//;
 
-		single_locus = ( qi::uint_ - '-' )[ phx::bind( &loci_t::push_back, qi::_r1, qi::_1, m_base_index ) ] // 1 is the second argument of the bound member function; the default value for that argument is apparently not enought, but an explicit value is needed to compile
+		single_locus = ( qi::uint_ - '-' )[ phx::bind( static_cast<push_back>(&loci_t::push_back), qi::_r1, qi::_1, m_base_index ) ] // 1 is the second argument of the bound member function; the default value for that argument is apparently not enought, but an explicit value is needed to compile
 		;
 
-		loci_range = ( qi::uint_ >> '-' >> qi::uint_ )[ phx::bind( &loci_t::push_back, qi::_r1, qi::_1, qi::_2, m_base_index ) ] // 1 is the third argument of the bound member function; the default value for that argument is apparently not enought, but an explicit value is needed to compile
+		loci_range = ( qi::uint_ >> '-' >> qi::uint_ )[ phx::bind( static_cast<push_back_range>(&loci_t::push_back), qi::_r1, qi::_1, qi::_2, m_base_index ) ] // 1 is the third argument of the bound member function; the default value for that argument is apparently not enought, but an explicit value is needed to compile
 		;
 
 		loci = loci_range(qi::_r1) | single_locus(qi::_r1)
