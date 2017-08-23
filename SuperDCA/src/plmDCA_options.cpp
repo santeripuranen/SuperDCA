@@ -132,24 +132,6 @@ void plmDCA_options::m_init()
 {
 	namespace po = boost::program_options;
 
-#ifdef PLMDCA_STANDALONE_BUILD
-	m_general_options.add_options()
-		("outfile", po::value< std::string >( &plmDCA_options::s_outfile_name )->default_value(plmDCA_options::s_outfile_name), "The output filename.")
-		("logfile", po::value< std::string >( &plmDCA_options::s_logfile_name )->default_value(plmDCA_options::s_logfile_name), "Log filename.")
-		("errfile", po::value< std::string >( &plmDCA_options::s_errfile_name )->default_value(plmDCA_options::s_errfile_name), "Error log filename.")
-	;
-	m_parallel_options.add_options()
-#ifndef SUPERDCA_NO_MPI
-		("nodes,n", po::value< int >( &plmDCA_options::s_nodes )->default_value(plmDCA_options::s_nodes)->notifier(plmDCA_options::s_init_nodes), "Number of MPI/distributed memory nodes (1=no MPI, -1=auto-detect).")
-#endif // SUPERDCA_NO_MPI
-#ifndef SUPERDCA_NO_TBB // Threading with Threading Building Blocks
-		("threads,t", po::value< int >( &plmDCA_options::s_threads )->default_value(plmDCA_options::s_threads)->notifier(plmDCA_options::s_init_threads), "Number of threads per MPI/shared memory node (-1=use all hardware threads that the OS/environment exposes).")
-#endif // SUPERDCA_NO_TBB
-#ifndef SUPERDCA_NO_CUDA
-		("cuda", po::bool_switch( &plmDCA_options::s_use_cuda )->default_value(plmDCA_options::s_use_cuda)->notifier(plmDCA_options::s_init_use_cuda), "Use CUDA.")
-#endif // SUPERDCA_NO_CUDA
-	;
-#endif // PLMDCA_STANDALONE_BUILD
 	m_alignment_options.add_options()
 		("no-reweighting", po::bool_switch( &plmDCA_options::s_no_reweighting )->default_value(plmDCA_options::s_no_reweighting)->notifier(plmDCA_options::s_init_no_reweighting), "Do not reweight samples i.e. do not try to correct for population structure.")
 		("reweighting-threshold", po::value< double >( &plmDCA_options::s_reweighting_threshold )->default_value(plmDCA_options::s_reweighting_threshold)->notifier(plmDCA_options::s_init_reweighting_threshold), "Fraction of identical positions required for two sequences to be considered identical.")
@@ -165,7 +147,7 @@ void plmDCA_options::m_init()
 		("lambda-J", po::value< double >( &plmDCA_options::s_lambda_J )->default_value(plmDCA_options::s_lambda_J)->notifier(plmDCA_options::s_init_lambda_J), "J matrix regularization factor (if lambda_J < 0.0, then value is automatically determined).")
 //		("fp-precision", po::value< uint >( &plmDCA_options::s_fp_precision )->default_value(plmDCA_options::s_fp_precision)->notifier(plmDCA_options::s_init_fp_precision), "Floating point precision in bits.")
 //		("no-estimate", po::bool_switch( &plmDCA_options::s_no_estimate )->default_value(plmDCA_options::s_no_estimate)->notifier(plmDCA_options::s_init_no_estimate), "Don't initialize DCA with estimate.")
-		("no-dca", po::bool_switch( &plmDCA_options::s_no_dca )->default_value(plmDCA_options::s_no_dca)->notifier(plmDCA_options::s_init_no_dca), "Don't run DCA (makes sense only if one wishes to run and output results using the initial estimate alone).")
+//		("no-dca", po::bool_switch( &plmDCA_options::s_no_dca )->default_value(plmDCA_options::s_no_dca)->notifier(plmDCA_options::s_init_no_dca), "Don't run DCA (makes sense only if one wishes to run and output results using the initial estimate alone).")
 		("no-coupling-output", po::bool_switch( &plmDCA_options::s_no_coupling_output )->default_value(plmDCA_options::s_no_coupling_output)->notifier(plmDCA_options::s_init_no_coupling_output), "Don't write coupling scores to file. This option is provided for benchmarking purposes.")
 	;
 }
@@ -173,10 +155,6 @@ void plmDCA_options::m_init()
 void plmDCA_options::AddOptions( boost::program_options::options_description *opdesc )
 {
 	namespace po = boost::program_options;
-#ifdef PLMDCA_STANDALONE_BUILD
-	opdesc->add(m_general_options);
-	opdesc->add(m_parallel_options);
-#endif // PLMDCA_STANDALONE_BUILD
 	opdesc->add(m_alignment_options);
 	opdesc->add(m_algorithm_options);
 }

@@ -177,7 +177,7 @@ void Apegrunt_options::m_init()
 	namespace po = boost::program_options;
 
 #ifdef APEGRUNT_STANDALONE_BUILD
-	m_general_options.add_options()
+m_general_options.add_options()
 		("outfile", po::value< std::string >( &Apegrunt_options::s_outfile_name )->default_value(Apegrunt_options::s_outfile_name), "Log filename.")
 		("errfile", po::value< std::string >( &Apegrunt_options::s_errfile_name )->default_value(Apegrunt_options::s_errfile_name), "Error log filename.")
 	;
@@ -190,13 +190,14 @@ void Apegrunt_options::m_init()
 #endif // APEGRUNT_NO_CUDA
 	;
 #endif // APEGRUNT_STANDALONE_BUILD
+
 	m_alignment_options.add_options()
 		("no-filter-alignment", po::bool_switch( &Apegrunt_options::s_no_filter_alignment )->default_value(Apegrunt_options::s_no_filter_alignment)->notifier(Apegrunt_options::s_init_no_filter_alignment), "Do not reduce the number of apegrunt input loci by applying MAF and GAP thresholds.")
 		("output-filtered-alignment", po::bool_switch( &Apegrunt_options::s_output_filtered_alignment )->default_value(Apegrunt_options::s_output_filtered_alignment)->notifier(Apegrunt_options::s_init_output_filtered_alignment), "Write filtered alignment to file.")
 		("output-allele-frequencies", po::bool_switch( &Apegrunt_options::s_output_allele_frequencies )->default_value(Apegrunt_options::s_output_allele_frequencies)->notifier(Apegrunt_options::s_init_output_allele_frequencies), "Write allele frequencies to file.")
 		("input-indexing-base", po::value< std::size_t >( &Apegrunt_options::s_input_indexing_base )->default_value(Apegrunt_options::s_input_indexing_base)->notifier(Apegrunt_options::s_init_input_indexing_base), "Base index for input." )
 		("output-indexing-base", po::value< std::size_t >( &Apegrunt_options::s_output_indexing_base )->default_value(Apegrunt_options::s_output_indexing_base)->notifier(Apegrunt_options::s_init_output_indexing_base), "Base index for output." )
-		("no-optimize-column-order", po::bool_switch( &Apegrunt_options::s_no_optimize_column_order )->default_value(Apegrunt_options::s_no_optimize_column_order), "Do not optimize data column order.")
+//		("no-optimize-column-order", po::bool_switch( &Apegrunt_options::s_no_optimize_column_order )->default_value(Apegrunt_options::s_no_optimize_column_order), "Do not optimize data column order.")
 		("maf-threshold", po::value< double >( &Apegrunt_options::s_minor_allele_frequency_threshold )->default_value(Apegrunt_options::s_minor_allele_frequency_threshold)->notifier(Apegrunt_options::s_init_minor_allele_frequency_threshold), "Minor allele frequency threshold. Alleles with a frequency below the threshold are excluded from the pair-analysis.")
 		("gap-threshold", po::value< double >( &Apegrunt_options::s_gap_frequency_threshold )->default_value(Apegrunt_options::s_gap_frequency_threshold)->notifier(Apegrunt_options::s_init_gap_frequency_threshold), "Gap frequency threshold. Positions with a gap frequency above the threshold are excluded from the pair-analysis.")
 //		("allele-state-rule", po::value< std::string >()/*->default_value( Apegrunt_options::s_allele_state_rule.str() )*/->notifier(Apegrunt_options::s_init_allele_state_rule), "Allele state filtering rule.")

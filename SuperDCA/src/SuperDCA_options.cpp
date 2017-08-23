@@ -167,20 +167,22 @@ void SuperDCA_options::m_init()
 //		("force-translation", po::bool_switch( &SuperDCA_options::s_force_translation )->default_value(SuperDCA_options::s_force_translation)->notifier(SuperDCA_options::s_init_force_translation), "Ignore start and stop codons when performing translation.")
 //		("complementary-read", po::bool_switch( &SuperDCA_options::s_complementary_read )->default_value(SuperDCA_options::s_complementary_read)->notifier(SuperDCA_options::s_init_complementary_read), "Read sequence from the complementary strand.")
 		("locilistfile", po::value< std::string >( &m_locilist_file_name ), "The analysable loci list input filename.")
-		("outfile", po::value< std::string >( &SuperDCA_options::s_out_file_name )->default_value(SuperDCA_options::s_out_file_name), "The output filename.")
-		("logfile", po::value< std::string >( &SuperDCA_options::s_log_file_name )->default_value(SuperDCA_options::s_log_file_name), "Log filename.")
-		("errfile", po::value< std::string >( &SuperDCA_options::s_err_file_name )->default_value(SuperDCA_options::s_err_file_name), "Error log filename.")
+		//("outfile", po::value< std::string >( &SuperDCA_options::s_out_file_name )->default_value(SuperDCA_options::s_out_file_name), "The output filename.")
+		//("logfile", po::value< std::string >( &SuperDCA_options::s_log_file_name )->default_value(SuperDCA_options::s_log_file_name), "Log filename.")
+		//("errfile", po::value< std::string >( &SuperDCA_options::s_err_file_name )->default_value(SuperDCA_options::s_err_file_name), "Error log filename.")
 	;
 	m_parallel_options.add_options()
-#ifndef SUPERDCA_NO_MPI
-		("nodes,n", po::value< int >( &SuperDCA_options::s_nodes )->default_value(SuperDCA_options::s_nodes)->notifier(SuperDCA_options::s_init_nodes), "Number of MPI/distributed memory nodes (1=single node; no MPI).")
-#endif // SUPERDCA_NO_MPI
 #ifndef SUPERDCA_NO_TBB // Threading with Threading Building Blocks
 		("threads,t", po::value< int >( &SuperDCA_options::s_threads )->default_value(SuperDCA_options::s_threads)->notifier(SuperDCA_options::s_init_threads), "Number of threads per MPI/shared memory node (-1=use all hardware threads that the OS/environment exposes).")
 #endif // SUPERDCA_NO_TBB
+/*
+#ifndef SUPERDCA_NO_MPI
+		("nodes,n", po::value< int >( &SuperDCA_options::s_nodes )->default_value(SuperDCA_options::s_nodes)->notifier(SuperDCA_options::s_init_nodes), "Number of MPI/distributed memory nodes (1=single node; no MPI).")
+#endif // SUPERDCA_NO_MPI
 #ifndef SUPERDCA_NO_CUDA
 		("cuda", po::bool_switch( &SuperDCA_options::s_use_cuda )->default_value(SuperDCA_options::s_use_cuda)->notifier(SuperDCA_options::s_init_use_cuda), "Use CUDA.")
 #endif // SUPERDCA_NO_CUDA
+*/
 	;
 }
 
