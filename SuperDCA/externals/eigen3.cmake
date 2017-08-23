@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-option( SUPERDCA_ENABLE_EIGEN "Find Eigen3 and, if successful, enable use in SuperDCA" true )
+#option( SUPERDCA_ENABLE_EIGEN "Find Eigen3 and, if successful, enable use in SuperDCA" true )
 
 ##############
 ## Eigen3 setup

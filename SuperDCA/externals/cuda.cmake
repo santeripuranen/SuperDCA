@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-option( SUPERDCA_ENABLE_CUDA "Find CUDA and, if successful, enable use in SuperDCA" true )
+#option( SUPERDCA_ENABLE_CUDA "Find CUDA and, if successful, enable use in SuperDCA" true )
 
 ##############
 ## CUDA setup
