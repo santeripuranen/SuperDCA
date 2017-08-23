@@ -1,0 +1,14 @@
+64a65,77
+>   /**
+>    * @brief returns gradient in x as reference parameter and function value as a scalar
+>    * @details In cases where gradient and value functions can reuse results from each other, it
+>    * may be appropriate to override this function with a combined implementation.
+>    *
+>    * @param grad [description]
+>    */
+>   virtual Scalar value_and_gradient(const  TVector &x,  TVector &grad)
+>   {
+> 	  Scalar f = value( x );
+> 	  gradient( x, grad );
+> 	  return f;
+>   }

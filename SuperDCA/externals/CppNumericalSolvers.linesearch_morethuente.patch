@@ -1,0 +1,16 @@
+31c31
+<     Scalar fval = objFunc.value(x);
+---
+>     //Scalar fval = objFunc.value(x);
+33c33,34
+<     objFunc.gradient(x, g);
+---
+>     //objFunc.gradient(x, g);
+>     Scalar fval = objFunc.value_and_gradient(x, g); // replace individual calls to value() and gradient() by the combined function
+107,108c108,110
+<       f = objFunc.value(x);
+<       objFunc.gradient(x, g);
+---
+>       //f = objFunc.value(x);
+>       //objFunc.gradient(x, g);
+>       f = objFunc.value_and_gradient(x, g); // replace individual calls to value() and gradient() by the combined function
