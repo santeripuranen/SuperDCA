@@ -279,6 +279,14 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	else // apply filters as defined on the command line
+	{
+		auto alignment_filter = apegrunt::Alignment_filter( apegrunt::Alignment_filter::ParameterPolicy::AQUIRE_GLOBAL );
+		for( auto& alignment: alignments )
+		{
+			alignment = alignment_filter.operator()<alignment_default_storage_t>( alignment );
+		}
+	}
 
 	if( superdca_options.has_samplelist_filename() )
 	{
@@ -321,14 +329,6 @@ int main(int argc, char **argv)
 				cputimer.stop();
 				if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); }
 			}
-		}
-	}
-	else // apply filters as defined on the command line
-	{
-		auto alignment_filter = apegrunt::Alignment_filter( apegrunt::Alignment_filter::ParameterPolicy::AQUIRE_GLOBAL );
-		for( auto& alignment: alignments )
-		{
-			alignment = alignment_filter.operator()<alignment_default_storage_t>( alignment );
 		}
 	}
 
