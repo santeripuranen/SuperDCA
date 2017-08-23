@@ -82,7 +82,7 @@ public:
 	{
 	}
 
-	real_t value( const cppoptlib::Vector<real_t> &x )
+	real_t value( const typename cppoptlib::Problem<real_t>::TVector &x )
 	{
 		m_parameters.set_solution( x.data() ); // set parameter estimate ptr
  		m_parameters.set_gradient( m_gradient.data(), true ); // set gradient ptr and set all values to zero
@@ -92,7 +92,7 @@ public:
 		return m_parameters.get_fvalue();
 	}
 
-	real_t value_no_set_gradient( const cppoptlib::Vector<real_t> &x )
+	real_t value_no_set_gradient( const typename cppoptlib::Problem<real_t>::TVector &x )
 	{
 		m_parameters.set_solution( x.data() ); // set parameter estimate ptr
  		superdca::plmDCA_objective_fval_and_gradient<ParametersT,double>( m_parameters );
@@ -101,14 +101,14 @@ public:
 		return m_parameters.get_fvalue();
 	}
 	//> Gradient function (overrides the default finite difference implementation)
-	void gradient( const cppoptlib::Vector<real_t> &x, cppoptlib::Vector<real_t> &grad ) override
+	void gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad ) override
 	{
 		this->value( x );
 		grad = Eigen::Map<Eigen::VectorXd,Eigen::Aligned>( m_gradient.data(), m_gradient.size() );
 	}
 
 	// override virtual base
-	real_t value_and_gradient( const cppoptlib::Vector<real_t> &x, cppoptlib::Vector<real_t> &grad ) override
+	real_t value_and_gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad ) override
 	{
  		m_parameters.set_gradient( grad.data(), true ); // set gradient ptr and set all values to zero
 		this->value_no_set_gradient(x);
