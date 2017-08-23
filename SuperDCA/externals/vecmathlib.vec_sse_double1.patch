@@ -1,0 +1,8 @@
+401c401
+<   boolvec_t isinf() const { return vml_std::isinf(v); }
+---
+>   boolvec_t isinf() const { return vml_std::isinf(boolvec_t::scalar_t(v)); } // gcc needs explicit type here
+410c410
+<     return vml_std::isnan(v);
+---
+>     return vml_std::isnan(boolvec_t::scalar_t(v)); // gcc needs explicit type here
