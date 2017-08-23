@@ -1,3 +1,7 @@
+# Use git branch and commit hash information in a CMake project
+#
+# http://xit0.org/2013/04/cmake-use-git-branch-and-commit-details-in-project/
+
 # Get the current working branch
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
