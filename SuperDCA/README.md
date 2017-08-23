@@ -6,14 +6,25 @@ SuperDCA is a tool for global direct couplings analysis (DCA) of input genome al
 
 ## Building SuperDCA
 
-In order to compile the SuperDCA binary, go to the `build` directory (in-source builds are strongly discouraged) and give these commands:
+Before compiling SuperDCA we need to patch external code dependencies. Go to the `SuperDCA/externals` directory and apply the patches:
+
+```
+sh apply_CppNumericalSolvers_patch.sh
+sh apply_vecmathlib_patch.sh
+```
+
+The first patch will extend the CppNumericalSolvers interface such that the LBFGS optimizer code is faster when used by SuperDCA. The second patch will fix a gcc compilation issue.
+
+In order to compile the SuperDCA binary, go to the `SuperDCA/build` directory (create one if necessary; in-source builds are strongly discouraged) and give these commands:
 
 ```
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make SuperDCA
 ```
 
-This should set up the CMake project, compile the binary and place it into the `bin` directory. The binary will by default be statically linked, except for the standard C++ runtime library, which is unfeasible to link statically, and [TBB](https://www.threadingbuildingblocks.org/) that can only be linked dynamically. Installing SuperDCA to another location is as easy as copying the binary (given that the [TBB](https://www.threadingbuildingblocks.org/) runtime library is properly installed on your system).
+This should set up the CMake project, compile the binary and place it into the `bin` directory. If not, then take a look at *Compile-time dependencies* below.
+
+The SuperDCA binary will by default be statically linked, except for the standard C++ runtime library, which is unfeasible to link statically, and [TBB](https://www.threadingbuildingblocks.org/) that can only be linked dynamically. Installing SuperDCA to another location is as easy as copying the binary (given that the [TBB](https://www.threadingbuildingblocks.org/) runtime library is properly installed on your system).
 
 ### Compile-time dependencies
 
