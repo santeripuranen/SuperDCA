@@ -214,12 +214,17 @@ public:
 	  m_no_estimate( plmDCA_options::no_estimate() ),
 	  m_no_dca( plmDCA_options::no_dca() )
 	{
-		// override default optimizer parameters
-		auto& control = m_optimizer.ctrl();
-		control.iterations = 2000; // default = 100000
-		control.m = 10; // default = 10
-		control.rate = 0.005; // default = 0.00005
+		auto control = cppoptlib::Criteria<real_t>();
+		control.iterations = 2000;
 		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
+		m_optimizer.setStopCriteria( control );
+
+		// override default optimizer parameters
+		//auto& control = m_optimizer.ctrl();
+		//control.iterations = 2000; // default = 100000
+		//control.m = 10; // default = 10
+		//control.rate = 0.005; // default = 0.00005
+		//control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
 	}
 
 	plmDCA_solver( plmDCA_solver<real_t,state_t>&& other )
@@ -229,11 +234,16 @@ public:
 	  m_optimizer_objective( m_optimizer_parameters ), // initialize objective
 	  m_cputimer( other.m_cputimer ),
 	  m_solution( std::move( other.m_solution ) ), // each instance has its own private solution vector
-	  m_optimizer( std::move( other.m_optimizer.ctrl() ) ),
+	  //m_optimizer( other.m_optimizer.criteria() ),
 	  m_loci_slice( std::move( other.m_loci_slice ) ),
 	  m_no_estimate( other.m_no_estimate ),
 	  m_no_dca( other.m_no_dca )
 	{
+		//m_optimizer.setStopCriteria( other.m_optimizer.criteria() );
+		auto control = cppoptlib::Criteria<real_t>();
+		control.iterations = 2000;
+		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
+		m_optimizer.setStopCriteria( control );
 	}
 #ifndef SUPERDCA_NO_TBB
     // TBB interface (Requirements for tbb::parallel_reduce Body)
@@ -245,11 +255,16 @@ public:
 	  m_optimizer_objective( m_optimizer_parameters ), // initialize objective
 	  m_cputimer( other.m_cputimer ),
 	  m_solution( other.m_solution.size(), 0 ), // each instance has its own private solution vector
-	  m_optimizer( other.m_optimizer.ctrl() ),
+	  //m_optimizer( other.m_optimizer.criteria() ),
 	  m_loci_slice( other.m_loci_slice ),
 	  m_no_estimate( other.m_no_estimate ),
 	  m_no_dca( other.m_no_dca )
 	{
+		//m_optimizer.setStopCriteria( other.m_optimizer.criteria() );
+		auto control = cppoptlib::Criteria<real_t>();
+		control.iterations = 2000;
+		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
+		m_optimizer.setStopCriteria( control );
 	}
 
 	// TBB interface (required by tbb::parallel_reduce Body)
@@ -290,7 +305,7 @@ public:
 				m_optimizer_log.fval_history[r] = m_optimizer_parameters.get_fvalue();
 				m_optimizer_log.nfeval_history[r] = m_optimizer_objective.get_nfeval();
 				m_optimizer_objective.reset_counters();
-				auto& info = m_optimizer.info();
+				auto& info = m_optimizer.criteria();
 				dca_statistics
 					<< "fval=" << std::scientific << m_optimizer_log.fval_history[r]
 					<< " gnorm=" << info.gradNorm
@@ -383,13 +398,15 @@ public:
 	void set_no_dca( bool flag ) { m_no_dca = flag; }
 
 private:
-    plmDCA_optimizer_parameters_t m_optimizer_parameters;
+	using problem_t = plmDCA_cpu_objective_for_CppNumericalSolvers<plmDCA_optimizer_parameters_t>;
+
+	plmDCA_optimizer_parameters_t m_optimizer_parameters;
 
 	CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>& m_Jij_storage;
 
 	OptimizerHistory<real_t>& m_optimizer_log;
 
-	plmDCA_cpu_objective_for_CppNumericalSolvers<plmDCA_optimizer_parameters_t> m_optimizer_objective;
+	problem_t m_optimizer_objective;
 
 	stopwatch::stopwatch m_cputimer; // for timing statistics
 
@@ -397,7 +414,8 @@ private:
 	std::vector<real_t,allocator_t> m_solution;
 
 	// the optimizer
-	cppoptlib::LbfgsSolver<real_t> m_optimizer; //(m_info);
+	//cppoptlib::LbfgsSolver<real_t> m_optimizer;
+	cppoptlib::LbfgsSolver<problem_t> m_optimizer;
 
 	const std::size_t m_loci_slice;
 
