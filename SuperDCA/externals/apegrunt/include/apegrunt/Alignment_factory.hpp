@@ -89,6 +89,7 @@ public:
 				new_sequence( (*sequence)[locus_index] );
 			}
 		}
+		new_alignment->get_block_accounting();
 		return new_alignment;
 	}
 
@@ -107,6 +108,7 @@ public:
 			auto new_sequence = StateVector_mutator<typename AlignmentT::statevector_t>( new_alignment->get_new_sequence( sequence->id_string() ) );
 			for( const auto state: sequence ) {	new_sequence(state); }
 		}
+		new_alignment->get_block_accounting();
 		return new_alignment;
 	}
 
@@ -151,7 +153,7 @@ public:
 				}
 			}
 		}
-
+		new_alignment->get_block_accounting();
 		return new_alignment;
 	}
 
@@ -171,7 +173,7 @@ public:
 				new_sequence( (*sequence)[locus_index] );
 			}
 		}
-
+		new_alignment->get_block_accounting();
 		return new_alignment;
 	}
 
