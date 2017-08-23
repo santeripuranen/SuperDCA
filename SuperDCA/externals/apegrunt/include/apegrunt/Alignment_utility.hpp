@@ -151,17 +151,24 @@ public:
 	template< typename FilteredAlignmentT >
 	Alignment_ptr< typename FilteredAlignmentT::state_t > operator()( const Alignment_ptr< typename FilteredAlignmentT::state_t > alignment ) const
 	{
-		const auto accept_list = get_filter_list( alignment );
+		if( Apegrunt_options::filter_alignment() )
+		{
+			const auto accept_list = get_filter_list( alignment );
 
-		std::ostringstream id_stream;
-		id_stream << "filtered";
-		id_stream << "_ge" << std::setw(3) << std::setfill('0') << std::size_t(m_maf_threshold*100.) << "maf";
-		id_stream << "_le" << std::setw(3) << std::setfill('0') << std::size_t(m_gap_threshold*100.) << "gf";
-		id_stream << "_" << m_state_rule.safe_string() << "alleles";
+			std::ostringstream id_stream;
+			id_stream << "filtered";
+			id_stream << "_ge" << std::setw(3) << std::setfill('0') << std::size_t(m_maf_threshold*100.) << "maf";
+			id_stream << "_le" << std::setw(3) << std::setfill('0') << std::size_t(m_gap_threshold*100.) << "gf";
+			id_stream << "_" << m_state_rule.safe_string() << "-lt04alleles";
 
-		accept_list->set_id_string( id_stream.str() );
+			accept_list->set_id_string( id_stream.str() );
 
-		return Alignment_factory< FilteredAlignmentT >()( alignment, accept_list );
+			return Alignment_factory< FilteredAlignmentT >()( alignment, accept_list );
+		}
+		else
+		{
+			return alignment;
+		}
 	}
 
 
