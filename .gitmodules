@@ -4,3 +4,6 @@
 [submodule "SuperDCA/externals/CppNumericalSolvers"]
 	path = SuperDCA/externals/CppNumericalSolvers
 	url = https://github.com/PatWie/CppNumericalSolvers.git
+[submodule "SuperDCA/externals/apegrunt"]
+	path = SuperDCA/externals/apegrunt
+	url = https://github.com/santeripuranen/apegrunt.git
