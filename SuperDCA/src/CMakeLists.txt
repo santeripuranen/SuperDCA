@@ -49,7 +49,7 @@ set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fdevir
 #set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fprefetch-loop-arrays" ) # seems to make SuperDCA run slower
 
 # release build flags
-set( SUPERDCA_GCC_RELEASE_FLAGS "-Wl,--strip-all" )
+set( SUPERDCA_GCC_RELEASE_FLAGS "-w -Wl,--strip-all" )
 set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall ${SUPERDCA_GCC_OPTIMIZATION_FLAGS} ${SUPERDCA_GCC_RELEASE_FLAGS}")
 
 # debug build flags
