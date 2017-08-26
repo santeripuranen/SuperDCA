@@ -24,7 +24,7 @@ To run SuperDCA with default settings use:
 ```
 SuperDCA -v <name of input genome alignment file>
 ```
-where the input alignment should be in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format).
+where the input alignment should be in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format). This will parse the alignment, apply default filtering rules, run the plmDCA inference algorithm and output coupling values. Default filtering will extract loci with more than 1 allele (not counting gaps), at least 1% minor allele frequency and at most 15% gap frequency. The filtering criteria can be changed with the `--maf-threshold` and `--gap-threshold` command line options, or disabled completely with the `--no-filter-alignment` flag.
 
 The main output file (*.out*) of SuperDCA contains a white space delimited, unsorted list of coupling values and pairs of position indices (using *1-based indexing* by default) relative to the columns in the input alignment.
 
