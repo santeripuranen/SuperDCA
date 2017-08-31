@@ -7,7 +7,7 @@ git clone --recursive https://github.com/santeripuranen/SuperDCA.git
 
 ## About
 
-SuperDCA is a tool for global [Direct Coupling Analysis (DCA)](https://en.wikipedia.org/wiki/Direct_coupling_analysis) of input genome alignments. Specifically, it implements a variant of the [pseudolikelihood maximization DCA (plmDCA)](https://doi.org/10.1016/j.jcp.2014.07.024), with emphasis on optimizations that enable its use on a genome scale, previously used on protein sequence alignments. Here, DCA may be used to discover co-evolving pairs of loci. 
+SuperDCA is a tool for global [Direct Coupling Analysis (DCA)](https://en.wikipedia.org/wiki/Direct_coupling_analysis) of input genome alignments. Specifically, it implements a variant of the [pseudolikelihood maximization DCA (plmDCA)](https://doi.org/10.1016/j.jcp.2014.07.024), with emphasis on optimizations that enable its use on a genome scale (DCA has so far typically been used on much smaller protein sequence alignments). Here, DCA may be used to discover co-evolving pairs of loci. 
 
 ## What's in this repository
 
@@ -34,12 +34,12 @@ The main output file (*.out*) of SuperDCA contains a white space delimited, unso
 
 ## Cite
 
-SuperDCA was developed as part of an academic research project. Please cite:
-```
-Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher, Jukka Corander, Erik Aurell (2017).
+SuperDCA was developed as part of an academic research project. Please cite (all three, if possible):
+
+* Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher, Jukka Corander, Erik Aurell (2017).
 SuperDCA for genome-wide epistasis analysis. doi: https://doi.org/10.1101/182527
 
-Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander (2017). Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. PloS Genetics, doi: https://doi.org/10.1371/journal.pgen.1006508
+* Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander (2017). Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. PloS Genetics, doi: https://doi.org/10.1371/journal.pgen.1006508
 
-https://github.com/santeripuranen/SuperDCA/
-```
+* https://github.com/santeripuranen/SuperDCA/
+
