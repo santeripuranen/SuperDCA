@@ -7,7 +7,7 @@ git clone --recursive https://github.com/santeripuranen/SuperDCA.git
 
 ## About
 
-SuperDCA is a tool for global direct couplings analysis (DCA) of input genome alignments.
+SuperDCA is a tool for global [Direct Coupling Analysis (DCA)](https://en.wikipedia.org/wiki/Direct_coupling_analysis) of input genome alignments. Specifically, it implements a variant of the [pseudolikelihood maximization DCA (plmDCA)](https://doi.org/10.1016/j.jcp.2014.07.024), with emphasis on optimizations that enable its use on a genome scale, previously used on protein sequence alignments. Here, DCA may be used to discover co-evolving pairs of loci. 
 
 ## What's in this repository
 
@@ -24,7 +24,11 @@ To run SuperDCA with default settings use:
 ```
 SuperDCA -v <name of input genome alignment file>
 ```
-where the input alignment should be in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format). This will parse the alignment, apply default filtering rules, run the plmDCA inference algorithm and output coupling values. Default filtering will extract loci with more than 1 allele (not counting gaps), at least 1% minor allele frequency and at most 15% gap frequency. The filtering criteria can be changed with the `--maf-threshold` and `--gap-threshold` command line options, or disabled completely with the `--no-filter-alignment` flag.
+where the input alignment should be in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format).
+
+This will parse the alignment, apply default filtering rules, run the plmDCA inference algorithm and output coupling values.
+
+Default filtering will extract loci with *more than* 1 allele (not counting gaps), *at least* 1% minor allele frequency and *at most* 15% gap frequency. The filtering criteria can be changed with the `--maf-threshold` and `--gap-threshold` command line options, or disabled completely with the `--no-filter-alignment` flag.
 
 The main output file (*.out*) of SuperDCA contains a white space delimited, unsorted list of coupling values and pairs of position indices (using *1-based indexing* by default) relative to the columns in the input alignment.
 
@@ -32,5 +36,10 @@ The main output file (*.out*) of SuperDCA contains a white space delimited, unso
 
 SuperDCA was developed as part of an academic research project. Please cite:
 ```
+Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher, Jukka Corander, Erik Aurell (2017).
+SuperDCA for genome-wide epistasis analysis. doi: https://doi.org/10.1101/182527
+
+Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander (2017). Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. PloS Genetics, doi: https://doi.org/10.1371/journal.pgen.1006508
+
 https://github.com/santeripuranen/SuperDCA/
 ```
