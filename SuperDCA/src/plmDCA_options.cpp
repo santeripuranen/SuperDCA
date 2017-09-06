@@ -138,7 +138,7 @@ void plmDCA_options::m_init()
 		("output-weights", po::bool_switch( &plmDCA_options::s_output_weights )->default_value(plmDCA_options::s_output_weights)->notifier(plmDCA_options::s_init_output_weights), "Write sample weights to file.")
 	;
 	m_algorithm_options.add_options()
-		("norm_of_mean_scoring", po::bool_switch( &plmDCA_options::s_norm_of_mean_scoring )->default_value(plmDCA_options::s_norm_of_mean_scoring)->notifier(plmDCA_options::s_init_norm_of_mean_scoring), "Calculate coupling score as the mean of J(ij) and J(ji) matrices (may require tons of memory).")
+		("norm-of-mean-scoring", po::bool_switch( &plmDCA_options::s_norm_of_mean_scoring )->default_value(plmDCA_options::s_norm_of_mean_scoring)->notifier(plmDCA_options::s_init_norm_of_mean_scoring), "Calculate coupling score as the mean of J(ij) and J(ji) matrices (may require tons of memory).")
 //      ("store_parameter_matrices_to_disk", po::bool_switch( &plmDCA_options::s_store_parameter_matrices_to_disk )->default_value(plmDCA_options::s_store_parameter_matrices_to_disk)->notifier(plmDCA_options::s_init_store_parameter_matrices_to_disk), "Store parameter matrices to disk (may require tons of disk space).")
 //		("keep-n-best-couples", po::value< int >( &plmDCA_options::s_keep_n_best_couples )->default_value(plmDCA_options::s_keep_n_best_couples)->notifier(plmDCA_options::s_init_keep_n_best_couples), "The number of best solutions that are stored (-1=keep all). Has huge effect on the amount of memory used.")
 
@@ -166,7 +166,7 @@ bool plmDCA_options::CheckOptions( boost::program_options::variables_map *varmap
 	{
 		if( s_verbose && s_out )
 		{
-			*s_out << "plmDCA: Being verbose." << std::endl;
+			*s_out << "plmDCA: being verbose." << std::endl;
 		}
 
 	}
