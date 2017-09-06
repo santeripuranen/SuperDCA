@@ -552,12 +552,6 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 			weights_file.precision(8);
 			for( auto w: *weights ) { weights_file << w << "\n"; }
 			weights_file.close();
-
-			// output alignment
-			//fs::path alignment_filepath( alignment->id_string()+".no_duplicates.fasta" );
-			//std::ofstream alignment_file( alignment_filepath.c_str(), std::ios_base::binary );
-			//generate_Alignment( alignment, &alignment_file );
-			//alignment_file.close();
 		}
 // END temp output code
 
