@@ -147,7 +147,7 @@ void plmDCA_options::m_init()
 		("lambda-J", po::value< double >( &plmDCA_options::s_lambda_J )->default_value(plmDCA_options::s_lambda_J)->notifier(plmDCA_options::s_init_lambda_J), "J matrix regularization factor (if lambda_J < 0.0, then value is automatically determined).")
 //		("fp-precision", po::value< uint >( &plmDCA_options::s_fp_precision )->default_value(plmDCA_options::s_fp_precision)->notifier(plmDCA_options::s_init_fp_precision), "Floating point precision in bits.")
 //		("no-estimate", po::bool_switch( &plmDCA_options::s_no_estimate )->default_value(plmDCA_options::s_no_estimate)->notifier(plmDCA_options::s_init_no_estimate), "Don't initialize DCA with estimate.")
-//		("no-dca", po::bool_switch( &plmDCA_options::s_no_dca )->default_value(plmDCA_options::s_no_dca)->notifier(plmDCA_options::s_init_no_dca), "Don't run DCA (makes sense only if one wishes to run and output results using the initial estimate alone).")
+		("no-dca", po::bool_switch( &plmDCA_options::s_no_dca )->default_value(plmDCA_options::s_no_dca)->notifier(plmDCA_options::s_init_no_dca), "Don't run DCA (if one, for example, only wants to compute and output weights).")
 		("no-coupling-output", po::bool_switch( &plmDCA_options::s_no_coupling_output )->default_value(plmDCA_options::s_no_coupling_output)->notifier(plmDCA_options::s_init_no_coupling_output), "Don't write coupling scores to file. This option is provided for benchmarking purposes.")
 	;
 }
