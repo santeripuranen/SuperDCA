@@ -55,6 +55,7 @@ public:
 	const std::string& get_samplelist_filename() const;
 
 	static bool output_SNPs();
+	static bool output_filtered_alignment();
 	static bool output_filterlist_alignment();
 	static bool output_samplelist_alignment();
 	//static bool translate_output_alignment();
@@ -97,6 +98,7 @@ private:
 	static int s_nodes;
 	static bool s_use_cuda;
 	static bool	s_output_SNPs;
+	static bool s_output_filtered_alignment;
 	static bool	s_output_filterlist_alignment;
 	static bool	s_output_samplelist_alignment;
 	//static bool s_translate_output_alignment;
@@ -121,6 +123,7 @@ private:
 	static void s_init_nodes( const int& nnodes );
 	static void s_init_use_cuda( const bool& use_cuda );
 	static void s_init_output_SNPs( const bool& flag );
+	static void s_init_output_filtered_alignment( const bool& flag );
 	static void s_init_output_filterlist_alignment( const bool& flag );
 	static void s_init_output_samplelist_alignment( const bool& flag );
 	//static void s_init_translate_output_alignment( const bool& flag );

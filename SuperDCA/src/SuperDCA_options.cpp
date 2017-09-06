@@ -29,6 +29,7 @@ std::ostream* SuperDCA_options::s_err = nullptr;
 uint SuperDCA_options::s_state = 1;
 bool SuperDCA_options::s_verbose = false;
 bool SuperDCA_options::s_output_SNPs = false;
+bool SuperDCA_options::s_output_filtered_alignment = false;
 bool SuperDCA_options::s_output_filterlist_alignment = false;
 bool SuperDCA_options::s_output_samplelist_alignment = false;
 //bool SuperDCA_options::s_translate_output_alignment = false;
@@ -124,6 +125,7 @@ bool SuperDCA_options::has_samplelist_filename() const { return !m_samplelist_fi
 const std::string& SuperDCA_options::get_samplelist_filename() const { return m_samplelist_file_name; }
 
 bool SuperDCA_options::output_SNPs() { return s_output_SNPs; }
+bool SuperDCA_options::output_filtered_alignment() { return s_output_filtered_alignment; }
 bool SuperDCA_options::output_filterlist_alignment() { return s_output_filterlist_alignment; }
 bool SuperDCA_options::output_samplelist_alignment() { return s_output_samplelist_alignment; }
 //bool SuperDCA_options::translate_output_alignment() { return s_translate_output_alignment; }
@@ -160,13 +162,14 @@ void SuperDCA_options::m_init()
 		("alignmentfile", po::value< std::vector< std::string > >( &m_alignment_file_names )->composing(), "The input alignment filename(s). When two filenames are specified, only inter-alignment links will be probed for.")
 		("filterlistfile", po::value< std::string >( &m_filterlist_file_name ), "The loci filter list input filename.")
 //		("output-SNPs", po::bool_switch( &SuperDCA_options::s_output_SNPs )->default_value(SuperDCA_options::s_output_SNPs)->notifier(SuperDCA_options::s_init_output_SNPs), "Extract and output all SNPs.")
+		("output-filtered-alignment", po::bool_switch( &SuperDCA_options::s_output_filtered_alignment )->default_value(SuperDCA_options::s_output_filtered_alignment)->notifier(SuperDCA_options::s_init_output_filtered_alignment), "Write filtered alignment to file.")
 		("output-filterlist-alignment", po::bool_switch( &SuperDCA_options::s_output_filterlist_alignment )->default_value(SuperDCA_options::s_output_filterlist_alignment)->notifier(SuperDCA_options::s_init_output_filterlist_alignment), "Output alignment after filterlist selection.")
 		("samplelistfile", po::value< std::string >( &m_samplelist_file_name ), "The sample filter list input filename.")
 		("output-samplelist-alignment", po::bool_switch( &SuperDCA_options::s_output_samplelist_alignment )->default_value(SuperDCA_options::s_output_samplelist_alignment)->notifier(SuperDCA_options::s_init_output_samplelist_alignment), "Output alignment after samplelist selection.")
 //		("translate-output-alignment", po::bool_switch( &SuperDCA_options::s_translate_output_alignment )->default_value(SuperDCA_options::s_translate_output_alignment)->notifier(SuperDCA_options::s_init_translate_output_alignment), "Output alignments are translated into amino acid sequences.")
 //		("force-translation", po::bool_switch( &SuperDCA_options::s_force_translation )->default_value(SuperDCA_options::s_force_translation)->notifier(SuperDCA_options::s_init_force_translation), "Ignore start and stop codons when performing translation.")
 //		("complementary-read", po::bool_switch( &SuperDCA_options::s_complementary_read )->default_value(SuperDCA_options::s_complementary_read)->notifier(SuperDCA_options::s_init_complementary_read), "Read sequence from the complementary strand.")
-		("locilistfile", po::value< std::string >( &m_locilist_file_name ), "The analysable loci list input filename.")
+		("locilistfile", po::value< std::string >( &m_locilist_file_name ), "Analysable loci list filename.")
 		//("outfile", po::value< std::string >( &SuperDCA_options::s_out_file_name )->default_value(SuperDCA_options::s_out_file_name), "The output filename.")
 		//("logfile", po::value< std::string >( &SuperDCA_options::s_log_file_name )->default_value(SuperDCA_options::s_log_file_name), "Log filename.")
 		//("errfile", po::value< std::string >( &SuperDCA_options::s_err_file_name )->default_value(SuperDCA_options::s_err_file_name), "Error log filename.")
@@ -284,6 +287,13 @@ void SuperDCA_options::s_init_output_SNPs( const bool& flag )
 	if( s_verbose && s_out && flag )
 	{
 		*s_out << "SuperDCA: will extract and output all SNPs.\n";
+	}
+}
+void SuperDCA_options::s_init_output_filtered_alignment( const bool& flag )
+{
+	if( flag && s_verbose && s_out )
+	{
+		*s_out << "SuperDCA: output filtered alignment to file.\n";
 	}
 }
 
