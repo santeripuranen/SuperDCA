@@ -27,6 +27,7 @@
 #include "boost/filesystem/operations.hpp" // includes boost/filesystem/path.hpp
 
 #include "apegrunt/Apegrunt.h"
+#include "apegrunt/Loci_generators.hpp"
 
 #include "SuperDCA.h"
 #include "plmDCA.hpp"
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
 					<< " threads"
 				;
 			}
-			*SuperDCA_options::get_out_stream()<< std::endl;
+			*SuperDCA_options::get_out_stream() << "\n" << std::endl;
 		}
 		#endif // #ifndef SUPERDCA_NO_TBB
 	}
@@ -159,7 +160,7 @@ int main(int argc, char **argv)
 
 		if( SuperDCA_options::verbose() )
 		{
-			*SuperDCA_options::get_out_stream() << "SuperDCA: get " << superdca_options.get_alignment_filenames().size() << " alignment(s).\n";
+			*SuperDCA_options::get_out_stream() << "SuperDCA: get " << superdca_options.get_alignment_filenames().size() << " alignment" << (superdca_options.get_alignment_filenames().size() > 1 ? "s" : "") << "\n\n";
 		}
 
 		for( auto& filename: superdca_options.get_alignment_filenames() )
@@ -181,11 +182,11 @@ int main(int argc, char **argv)
 				alignments.push_back( alignment ); // store the new alignment
 				if( SuperDCA_options::verbose() )
 				{
-					*SuperDCA_options::get_out_stream() << "SuperDCA: got alignment \"" << alignment->id_string() << "\" with " << alignment->size() << " sequences and " << alignment->n_loci() << " loci.\n";
+					*SuperDCA_options::get_out_stream() << "SuperDCA: got alignment \"" << alignment->id_string() << "\":\n";
 					alignment->statistics( SuperDCA_options::get_out_stream() );
 				}
 			}
-			cputimer.print_timing_stats();
+			cputimer.print_timing_stats(); *SuperDCA_options::get_out_stream() << "\n";
 		}
 	}
 	else
@@ -196,7 +197,7 @@ int main(int argc, char **argv)
 
 	if( SuperDCA_options::verbose() )
 	{
-		*SuperDCA_options::get_out_stream() << "\nSuperDCA: process alignments\n";
+		*SuperDCA_options::get_out_stream() << "SuperDCA: pre-process alignment" << (alignments.size() > 1 ? "s" : "") << "\n";
 	}
 
 	if( superdca_options.output_SNPs() )
@@ -215,23 +216,16 @@ int main(int argc, char **argv)
 				*SuperDCA_options::get_out_stream() << "SuperDCA: alignment has " << alignment->size() << " sequences and " << alignment->n_loci() << " SNPs\n";
 				alignment->statistics( SuperDCA_options::get_out_stream() );
 			}
-			fs::path filepath( alignment->id_string()+".fasta" );
-			if( !fs::exists( filepath ) )
 			{
+				auto alignment_file = get_unique_ofstream( alignment->id_string()+".fasta" );
 				if( SuperDCA_options::verbose() )
 				{
-					*SuperDCA_options::get_out_stream() << "SuperDCA: write alignment to file " << filepath << "\n";
+					*SuperDCA_options::get_out_stream() << "SuperDCA: write alignment to file " << alignment_file.name() << "\n";
 				}
-
-				cputimer.start();
-				std::ofstream alignment_file( filepath.c_str(), std::ios_base::binary );
-				apegrunt::generate_Alignment( alignment, &alignment_file );
-				alignment_file.close();
-				cputimer.stop();
-				if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); }
+				apegrunt::generate_Alignment( alignment, alignment_file.stream() );
 			}
-
-			cputimer.stop(); cputimer.print_timing_stats();
+			cputimer.stop();
+			if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); *SuperDCA_options::get_out_stream() << "\n"; }
 		}
 	}
 
@@ -249,7 +243,6 @@ int main(int argc, char **argv)
 		{
 			*SuperDCA_options::get_out_stream() << "SuperDCA: filter list contains " << accept_list->size() << " loci.\n";
 		}
-		//std::cout << "SuperDCA: filter list = {" << accept_list << " }" << std::endl;
 
 		if( SuperDCA_options::verbose() )
 		{
@@ -258,25 +251,22 @@ int main(int argc, char **argv)
 		cputimer.start();
 		alignments.front() = apegrunt::Alignment_factory< alignment_default_storage_t >()( alignments.front(), accept_list );
 		cputimer.stop();
-		if( plmDCA_options::verbose() ) { cputimer.print_timing_stats(); }
+		if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); *SuperDCA_options::get_out_stream() << "\n"; }
 
 		if( SuperDCA_options::output_filterlist_alignment() )
 		{
-			fs::path filepath( alignments.front()->id_string()+".fasta" );
-			if( !fs::exists( filepath ) )
+			// output alignment
+			cputimer.start();
 			{
+				auto alignment_file = get_unique_ofstream( alignments.front()->id_string()+".fasta" );
 				if( SuperDCA_options::verbose() )
 				{
-					*SuperDCA_options::get_out_stream() << "SuperDCA: write filter list-selected alignment to file " << filepath << "\n";
+					*SuperDCA_options::get_out_stream() << "SuperDCA: write filterlist-selected alignment to file " << alignment_file.name() << "\n";
 				}
-
-				cputimer.start();
-				std::ofstream alignment_file( filepath.c_str(), std::ios_base::binary );
-				apegrunt::generate_Alignment( alignments.front(), &alignment_file );
-				alignment_file.close();
-				cputimer.stop();
-				if( plmDCA_options::verbose() ) { cputimer.print_timing_stats(); }
+				apegrunt::generate_Alignment( alignments.front(), alignment_file.stream() );
 			}
+			cputimer.stop();
+			if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); }
 		}
 	}
 	else // apply filters as defined on the command line
@@ -285,6 +275,34 @@ int main(int argc, char **argv)
 		for( auto& alignment: alignments )
 		{
 			alignment = alignment_filter.operator()<alignment_default_storage_t>( alignment );
+
+			if( SuperDCA_options::output_filtered_alignment() )
+			{
+				cputimer.start();
+
+				// output alignment
+				{
+					auto alignment_file = get_unique_ofstream( alignment->id_string()+".fasta" );
+					if( SuperDCA_options::verbose() )
+					{
+						*SuperDCA_options::get_out_stream() << "SuperDCA: write filtered alignment to file " << alignment_file.name() << "\n";
+					}
+					apegrunt::generate_Alignment( alignment, alignment_file.stream() );
+				}
+
+				// output loci list
+				{
+					auto locilist_file = get_unique_ofstream( alignment->id_string()+".loci"  );
+					if( SuperDCA_options::verbose() )
+					{
+						*SuperDCA_options::get_out_stream() << "SuperDCA: write original loci indices for filtered alignment to file " << locilist_file.name() << "\n";
+					}
+					apegrunt::generate_Loci_list( alignment->get_loci_translation(), locilist_file.stream() );
+				}
+
+				cputimer.stop();
+				if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); *SuperDCA_options::get_out_stream() << "\n"; }
+			}
 		}
 	}
 
@@ -300,7 +318,7 @@ int main(int argc, char **argv)
 
 		if( SuperDCA_options::verbose() )
 		{
-			*SuperDCA_options::get_out_stream() << "SuperDCA: sample list contains " << sample_list->size() << " samples.\n";
+			*SuperDCA_options::get_out_stream() << "SuperDCA: sample list contains " << sample_list->size() << " samples\n";
 		}
 
 		if( SuperDCA_options::verbose() )
@@ -314,21 +332,17 @@ int main(int argc, char **argv)
 
 		if( SuperDCA_options::output_samplelist_alignment() )
 		{
-			fs::path filepath( alignments.front()->id_string()+".fasta" );
-			if( !fs::exists( filepath ) )
+			cputimer.start();
 			{
+				auto alignment_file = get_unique_ofstream( alignments.front()->id_string()+".fasta" );
 				if( SuperDCA_options::verbose() )
 				{
-					*SuperDCA_options::get_out_stream() << "SuperDCA: write samplelist-selected alignment to file " << filepath << "\n";
+					*SuperDCA_options::get_out_stream() << "SuperDCA: write samplelist-selected alignment to file " << alignment_file.name() << "\n";
 				}
-
-				cputimer.start();
-				std::ofstream alignment_file( filepath.c_str(), std::ios_base::binary );
-				apegrunt::generate_Alignment( alignments.front(), &alignment_file );
-				alignment_file.close();
-				cputimer.stop();
-				if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); }
+				apegrunt::generate_Alignment( alignments.front(), alignment_file.stream() );
 			}
+			cputimer.stop();
+			if( SuperDCA_options::verbose() ) { cputimer.print_timing_stats(); *SuperDCA_options::get_out_stream() << "\n"; }
 		}
 	}
 
@@ -340,8 +354,8 @@ int main(int argc, char **argv)
 		fourstate_alignments.push_back( apegrunt::transform_alignment<apegrunt::triallelic_state_t>( alignment ) );
 		if( SuperDCA_options::verbose() )
 		{
-			*SuperDCA_options::get_out_stream() << "SuperDCA: alignment \"" << alignment->id_string() << ":\n"; // has " << alignment->size() << " sequences and " << alignment->n_loci() << " loci.\n";
-			alignment->statistics( SuperDCA_options::get_out_stream() );
+			*SuperDCA_options::get_out_stream() << "SuperDCA: alignment \"" << alignment->id_string() << "\":\n"; // has " << alignment->size() << " sequences and " << alignment->n_loci() << " loci.\n";
+			fourstate_alignments.back()->statistics( SuperDCA_options::get_out_stream() );
 		}
 	}
 
@@ -388,19 +402,19 @@ int main(int argc, char **argv)
 		loci_list = apegrunt::make_Loci_list( loci );
     }
 
-	if( SuperDCA_options::verbose() ) {	*SuperDCA_options::get_out_stream() << "\nSuperDCA: run plmDCA.\n"; }
+    *SuperDCA_options::get_out_stream() << "\n";
 
 	// run the inference
 	bool plmDCA_success = run_plmDCA<double>( fourstate_alignments, loci_list );
 
 	if( SuperDCA_options::verbose() )
 	{
-		*SuperDCA_options::get_out_stream() << "SuperDCA: analysis completed.\n";
+		*SuperDCA_options::get_out_stream() << "SuperDCA: analysis completed\n";
 	}
 	globaltimer.stop(); globaltimer.print_timing_stats();
 	if(	!plmDCA_success )
 	{
-		*SuperDCA_options::get_err_stream() << "SuperDCA error: plmDCA failed.\n\n";
+		*SuperDCA_options::get_err_stream() << "SuperDCA error: plmDCA failed\n\n";
 		Exit(EXIT_FAILURE);
 	}
     Exit(EXIT_SUCCESS);
