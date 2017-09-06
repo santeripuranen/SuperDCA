@@ -23,6 +23,10 @@
 
 #include <string>
 #include <iostream> // for std::cin, std::istream, std::cout
+#include <fstream>
+#include <sstream>
+
+#include "boost/filesystem/operations.hpp" // includes boost/filesystem/path.hpp
 
 namespace superdca {
 
@@ -38,6 +42,43 @@ void Exit(bool exit_flag, std::string msg = "");
   	@return True if answer was yes, false if anwer was no.
 */
 bool readYesNoAnswer( std::istream *in = &std::cin, std::ostream *out = &std::cout );
+
+template< typename StreamT >
+class stream_name_association
+{
+public:
+	template< typename StringT >
+	stream_name_association( std::ofstream&& s, const StringT& name )
+	: m_stream(std::move(s)), m_name(name) { }
+
+	StreamT* stream() { return &m_stream; }
+
+	const std::string& name() const { return m_name; }
+
+	void close() { m_stream.close(); }
+
+private:
+	StreamT m_stream;
+	std::string m_name;
+};
+
+template< typename StringT >
+stream_name_association<std::ofstream> get_unique_ofstream( StringT filename )
+{
+	boost::filesystem::path filepath;
+
+	int index = 0;
+	do
+	{
+		std::ostringstream index_os; index_os << index;
+		filepath = std::string(filename) + ( index == 0 ? "" : "."+index_os.str() );
+	}
+	while( boost::filesystem::exists( filepath ) && ++index );
+
+	std::ofstream outfile( filepath.c_str(), std::ios_base::binary );
+
+	return stream_name_association<std::ofstream>( std::move(outfile), filepath.c_str() );
+}
 
 } // namespace superdca
 
