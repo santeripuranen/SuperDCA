@@ -48,7 +48,7 @@ class stream_name_association
 {
 public:
 	template< typename StringT >
-	stream_name_association( std::ofstream&& s, const StringT& name )
+	stream_name_association( StreamT&& s, const StringT& name )
 	: m_stream(std::move(s)), m_name(name) { }
 
 	StreamT* stream() { return &m_stream; }
