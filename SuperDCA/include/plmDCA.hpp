@@ -111,12 +111,12 @@ public:
 			if( plmDCA_options::norm_of_mean_scoring() )
 			{
 				*plmDCA_options::out_stream()
-					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(raw_matrix_t)) << " of memory.\n";
+					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(raw_matrix_t)) << " of memory\n";
 			}
 			else
 			{
 				*plmDCA_options::out_stream()
-					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(internal_real_t)) << " of memory.\n";
+					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(internal_real_t)) << " of memory\n";
 			}
 		}
 
@@ -531,52 +531,52 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
     	{
 			if( plmDCA_options::verbose() )
 			{
-				*plmDCA_options::out_stream() << "\nplmDCA: calculate sequence weights.\n";
+				*plmDCA_options::out_stream() << "\nplmDCA: calculate sequence weights\n";
 			}
 			cputimer.start();
 			weights = std::make_shared< std::vector<real_t> >( calculate_weights( alignments.back() ) );
-			cputimer.stop(); cputimer.print_timing_stats();
+			cputimer.stop(); cputimer.print_timing_stats(); *plmDCA_options::out_stream() << "\n";
     	}
     	else
     	{
     		weights = std::make_shared< std::vector<real_t> >( alignments.back()->size(), 1.0 );
     	}
 
-// BEGIN temp output code
+    	// output weights
 		if( plmDCA_options::output_weights() )
 		{
 			// output weights
-			boost::filesystem::path weights_filepath( alignments.front()->id_string()+".weights" );
-			std::ofstream weights_file( weights_filepath.c_str(), std::ios_base::binary );
-			weights_file << std::scientific;
-			weights_file.precision(8);
-			for( auto w: *weights ) { weights_file << w << "\n"; }
-			weights_file.close();
-		}
-// END temp output code
-
-// /*
-		if( plmDCA_options::verbose() )
-		{
-			*plmDCA_options::out_stream() << "\nplmDCA: construct block accounting.\n";
+			auto weights_file = get_unique_ofstream( alignments.front()->id_string()+".weights" );
+			auto& weights_stream = *weights_file.stream();
+			weights_stream << std::scientific;
+			weights_stream.precision(8);
+			for( auto w: *weights ) { weights_stream << w << "\n"; }
 		}
 
-		cputimer.start();
-		for( auto& alignment: alignments )
+		if( plmDCA_options::no_dca() )
 		{
-			alignment->get_block_accounting(); // refresh block accounting
+			if( plmDCA_options::verbose() )
+			{
+				*plmDCA_options::out_stream() << "plmDCA: exit on users request without performing DCA\n\n";
+			}
+			return true;
 		}
-		cputimer.stop(); cputimer.print_timing_stats();
-// */
+
 		// Perform the optimization
 		if( plmDCA_options::verbose() )
 		{
-			*plmDCA_options::out_stream() << "\nplmDCA: let's optimize!\n";
+			*plmDCA_options::out_stream() << "\nplmDCA: let's learn!\n";
 		}
 
 		cputimer.start();
 
-	   // The parameter learning stage -- this is where the magic happens
+		// refresh block accounting
+		for( auto& alignment: alignments )
+		{
+			alignment->get_block_accounting();
+		}
+
+		// The parameter learning stage -- this is where the magic happens
 		auto plmDCA_ftor = get_plmDCA_solver( alignments, weights, Jij_storage, optimizer_log, loci_list->size() );
 	#ifndef SUPERDCA_NO_TBB
 		tbb::parallel_reduce( tbb::blocked_range<decltype(loci_range.begin())>( loci_range.begin(), loci_range.end(), 1 ), plmDCA_ftor );
@@ -594,78 +594,45 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 		{
 
 			// Ensure that we always get a unique output filename
-			std::ofstream couplings_file, matrixfile; //, compressed_couplings_file;
-			boost::filesystem::path filepath, matrixfilepath; //, compressedfilepath;
+			auto couplings_file = get_unique_ofstream( alignments.front()->id_string()+(alignments.size() > 1 ? "_scan" : "")+".SuperDCA_couplings."+extension.str()+".all" );
+			//auto matrix_file = get_unique_ofstream( alignments.front()->id_string()+(alignments.size() > 1 ? "_scan" : "")+".SuperDCA_coupling_matrices."+extension.str()+".all" );
 
-			int file_index = 0;
-			do
-			{
-				std::ostringstream index_os; index_os << file_index;
-				if( alignments.size() > 1 )
-				{
-					filepath = alignments.front()->id_string()+"_scan.SuperDCA_couplings."+extension.str()+".all"+ ( file_index == 0 ? "" : "."+index_os.str() );
-					matrixfilepath = alignments.front()->id_string()+"_scan.SuperDCA_coupling_matrices."+extension.str()+".all"+ ( file_index == 0 ? "" : "."+index_os.str() );
-				}
-				else
-				{
-					filepath = alignments.front()->id_string()+".SuperDCA_couplings."+extension.str()+".all"+ ( file_index == 0 ? "" : "."+index_os.str() );
-					matrixfilepath = alignments.front()->id_string()+".SuperDCA_couplings_matrices."+extension.str()+".all"+ ( file_index == 0 ? "" : "."+index_os.str() );
-				}
-			}
-			while( boost::filesystem::exists( filepath ) && ++file_index );
-
+			if( couplings_file.stream()->is_open() && couplings_file.stream()->good() )
 			{
 				if( plmDCA_options::verbose() )
 				{
-					*plmDCA_options::out_stream() << "plmDCA: open couplings output file '" << filepath.c_str() << "'.\n";
-				}
-				couplings_file.open( filepath.c_str(), std::ios_base::binary );
-			}
-
-			if( plmDCA_options::norm_of_mean_scoring() )
-			{
-				if( plmDCA_options::verbose() )
-				{
-					*plmDCA_options::out_stream() << "plmDCA: open coupling matrix output file '" << matrixfilepath.c_str() << "'.\n";
-				}
-				matrixfile.open( matrixfilepath.c_str(), std::ios_base::binary );
-			}
-
-			if( couplings_file.is_open() && couplings_file.good() )
-			{
-				if( plmDCA_options::verbose() )
-				{
-					*plmDCA_options::out_stream() << "\nplmDCA: writing coupling values" << ".\n";
+					*plmDCA_options::out_stream() << "\nplmDCA: writing coupling values to file \"" << couplings_file.name() << "\"\n";
 				}
 				cputimer.start();
 
 				auto index_translation_dim1 = alignments.front()->get_loci_translation();
 				auto index_translation_dim2 = alignments.back()->get_loci_translation();
 
-				const std::size_t index_shift = apegrunt::Apegrunt_options::get_output_indexing_base();
+				const std::size_t base_index = apegrunt::Apegrunt_options::get_output_indexing_base();
 
+				auto& couplings_out = *couplings_file.stream();
 				for( auto r_itr = cbegin(loci_list); r_itr != cend(loci_list); ++r_itr )
 				{
 					if( plmDCA_options::norm_of_mean_scoring() )
 					{
-						matrixfile.precision(6); matrixfile << std::scientific;
+						//matrixfile.precision(6); matrixfile << std::scientific;
 
-						couplings_file.precision(8); couplings_file << std::fixed;
+						couplings_out.precision(8); couplings_out << std::fixed;
 						const auto r = *r_itr;
-						const auto r_index = (*index_translation_dim1)[r]+index_shift;
+						const auto r_index = (*index_translation_dim1)[r]+base_index;
 
 						if( alignments.size() > 1 )
 						{
 							for( auto n_itr = cbegin(loci_list2); n_itr != cend(loci_list2); ++n_itr )
 							{
 								const auto n = *n_itr;
-								{
-									const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
-									matrixfile << r_index << " " << (*index_translation_dim2)[n]+index_shift << " " << gauge_shift(Jij) << "\n";
-								}
+								//{
+								//	const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
+								//	matrixfile << r_index << " " << (*index_translation_dim2)[n]+base_index << " " << gauge_shift(Jij) << "\n";
+								//}
 
 								const auto Jij_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
-								couplings_file << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+index_shift << "\n";
+								couplings_out << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
 						else
@@ -674,33 +641,33 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 							{
 								const auto n = *n_itr;
 
-								{
-									const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
-									const auto&& Jji = Jij_storage.get_Jij_matrix(n,r);
-									matrixfile << (gauge_shift(Jij) + gauge_shift(Jji))*.5 << "\n";
-								}
+								//{
+								//	const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
+								//	const auto&& Jji = Jij_storage.get_Jij_matrix(n,r);
+								//	matrixfile << (gauge_shift(Jij) + gauge_shift(Jji))*.5 << "\n";
+								//}
 
 								const auto Jij_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
 								const auto Jji_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(n,r) ), std::size_t(state_t::GAP) );
 								const auto J_norm = frobenius_norm( (gauge_shift(Jij_storage.get_Jij_matrix(r,n)) + gauge_shift(Jij_storage.get_Jij_matrix(n,r)))*0.5, std::size_t(state_t::GAP) );
 
-								couplings_file << J_norm << " " << r_index << " " << (*index_translation_dim2)[n]+index_shift;
-								couplings_file
-										  << " " << Jij_norm
-										  << " " << Jji_norm
-										  << " " << (Jij_norm+Jji_norm)*0.5
-										  //<< " " << optimizer_log.fval_history[n]
-										  //<< " " << optimizer_log.fval_history[r]
-										  //<< " " << optimizer_log.nfeval_history[n] + optimizer_log.nfeval_history[r]
-										  << "\n";
+								couplings_out
+									<< J_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index
+									<< " " << Jij_norm
+									<< " " << Jji_norm
+									<< " " << (Jij_norm+Jji_norm)*0.5
+									//<< " " << optimizer_log.fval_history[n]
+									//<< " " << optimizer_log.fval_history[r]
+									//<< " " << optimizer_log.nfeval_history[n] + optimizer_log.nfeval_history[r]
+									<< "\n";
 							}
 						}
 					}
 					else
 					{
-						couplings_file.precision(8); couplings_file << std::fixed;
+						couplings_out.precision(8); couplings_out << std::fixed;
 						const auto r = *r_itr;
-						const auto r_index = (*index_translation_dim1)[r]+index_shift;
+						const auto r_index = (*index_translation_dim1)[r]+base_index;
 						if( alignments.size() > 1 )
 						{
 							for( auto n_itr = cbegin(loci_list2); n_itr != cend(loci_list2); ++n_itr )
@@ -708,7 +675,7 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 								const auto n = *n_itr;
 								const auto Jij_norm = Jij_storage.get_Jij_score(r,n);
 
-								couplings_file << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+index_shift << "\n";
+								couplings_out << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
 						else
@@ -719,36 +686,26 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 								const auto Jij_norm = Jij_storage.get_Jij_score(r,n);
 								const auto Jji_norm = Jij_storage.get_Jij_score(n,r);
 
-								couplings_file << (Jij_norm+Jji_norm)*0.5 << " " << r_index << " " << (*index_translation_dim2)[n]+index_shift << "\n";
+								couplings_out << (Jij_norm+Jji_norm)*0.5 << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
 					}
 				}
 				cputimer.stop(); cputimer.print_timing_stats();
 			}
-
-			if( couplings_file.is_open() )
-			{
-				couplings_file.close();
-			}
-			if( matrixfile.is_open() )
-			{
-				matrixfile.close();
-			}
 		}
-
     }
     else
     {
 		if( plmDCA_options::verbose() )
 		{
-			*plmDCA_options::out_stream() << "plmDCA: nothing to do.\n";
+			*plmDCA_options::out_stream() << "plmDCA: nothing to do\n";
 		}
     }
 
 	if( plmDCA_options::verbose() )
 	{
-		*plmDCA_options::out_stream() << "\nplmDCA: analysis completed.\n";
+		*plmDCA_options::out_stream() << "\nplmDCA: analysis completed\n";
 	}
 	plmdca_timer.stop(); plmdca_timer.print_timing_stats();
 
