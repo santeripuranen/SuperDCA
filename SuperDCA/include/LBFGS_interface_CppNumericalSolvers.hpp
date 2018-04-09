@@ -108,7 +108,7 @@ public:
 	}
 
 	// override virtual base
-	real_t value_and_gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad ) override
+	real_t value_and_gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad )
 	{
  		m_parameters.set_gradient( grad.data(), true ); // set gradient ptr and set all values to zero
 		this->value_no_set_gradient(x);
