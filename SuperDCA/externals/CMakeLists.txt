@@ -19,11 +19,15 @@ endfunction()
 function( superdca_target_message target_name )
 	superdca_message( "add target ${target_name}" )
 endfunction()
-string( REPLACE ":" ";" TEMP_CMAKE_MODULE_PATH $ENV{CMAKE_MODULE_PATH} )
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${TEMP_CMAKE_MODULE_PATH} )
+
+if( DEFINED ENV{CMAKE_MODULE_PATH} )
+  string( REPLACE ":" ";" SYSTEM_CMAKE_MODULE_PATH "$ENV{CMAKE_MODULE_PATH}" )
+  set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${SYSTEM_CMAKE_MODULE_PATH} )
+  superdca_message( "CMake module search path detected from system config" )
+endif()
+
 if( CMAKE_MODULE_PATH )
-	superdca_message( "CMake module search path detected from system config" )
-	superdca_message( "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}" INDENT )
+  superdca_message( "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}" INDENT )
 endif()
 
 # Setup of external dependencies
