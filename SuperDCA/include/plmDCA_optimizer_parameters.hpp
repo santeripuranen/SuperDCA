@@ -31,6 +31,7 @@
 #include "apegrunt/aligned_allocator.hpp"
 
 #include "Array_view.hpp"
+#include "Matrix_kernel_access_order.hpp"
 #include "Coupling_matrix_view.hpp"
 
 namespace superdca {
@@ -111,7 +112,9 @@ public:
 	using logpots_t = std::vector< std::array<real_t,N>, allocator_t >;
 	using nodebels_t = logpots_t;
 
-	using coupling_matrix_view_t = Coupling_matrix_view<real_t,N>;
+	//using coupling_matrix_view_t = Coupling_matrix_view<real_t,N>;
+	//using coupling_matrix_view_t = Coupling_matrix_view<MATRICES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
+	using coupling_matrix_view_t = Coupling_matrix_view<STATES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
 
 	using array_view_t = Array_view< real_t, N >;
 	using matrix_view_t = Array_view< array_view_t, extent<array_view_t>::value >;
