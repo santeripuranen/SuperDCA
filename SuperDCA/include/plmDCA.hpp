@@ -155,7 +155,8 @@ public:
 			j = m_dim2_mapping[j];
 		}
 		assert( i < m_dim1 && j < m_dim2 );
-		return coupling_storage[i*(m_dim1-1)+j]; // we store diagonal elements, too, even though they might never be used.
+		//return coupling_storage[i*(m_dim1-1)+j]; // we store diagonal elements, too, even though they might never be used.
+		return coupling_storage[i*m_dim1+j]; // we store diagonal elements, too, even though they might never be used.
 	}
 
 private:
@@ -371,7 +372,7 @@ public:
 					for( std::size_t n=0; n < Jr_solution.size(); ++n )
 					{
 						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
-						coupling_ij = frobenius_norm( gauge_shift( Jr_solution, n ), std::size_t(state_t::GAP) );
+						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
 					}
 				}
 				else
@@ -381,13 +382,13 @@ public:
 					{
 						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
 						// transpose the lower-triangular element matrices
-						coupling_ij = frobenius_norm( gauge_shift( Jr_solution, n, true ), std::size_t(state_t::GAP) );
+						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n, true ), std::size_t(state_t::GAP) );
 					}
 					// upper-triangular element matrices
 					for( std::size_t n=r+1; n <	Jr_solution.size(); ++n )
 					{
 						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
-						coupling_ij = frobenius_norm( gauge_shift( Jr_solution, n ), std::size_t(state_t::GAP) );
+						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
 					}
 				}
 			}
@@ -631,7 +632,7 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 								//	matrixfile << r_index << " " << (*index_translation_dim2)[n]+base_index << " " << gauge_shift(Jij) << "\n";
 								//}
 
-								const auto Jij_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
+								const auto Jij_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
 								couplings_out << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
@@ -647,9 +648,9 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 								//	matrixfile << (gauge_shift(Jij) + gauge_shift(Jji))*.5 << "\n";
 								//}
 
-								const auto Jij_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
-								const auto Jji_norm = frobenius_norm( gauge_shift( Jij_storage.get_Jij_matrix(n,r) ), std::size_t(state_t::GAP) );
-								const auto J_norm = frobenius_norm( (gauge_shift(Jij_storage.get_Jij_matrix(r,n)) + gauge_shift(Jij_storage.get_Jij_matrix(n,r)))*0.5, std::size_t(state_t::GAP) );
+								const auto Jij_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
+								const auto Jji_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(n,r) ), std::size_t(state_t::GAP) );
+								const auto J_norm = frobenius_norm( (ising_gauge(Jij_storage.get_Jij_matrix(r,n)) + ising_gauge(Jij_storage.get_Jij_matrix(n,r)))*0.5, std::size_t(state_t::GAP) );
 
 								couplings_out
 									<< J_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index
