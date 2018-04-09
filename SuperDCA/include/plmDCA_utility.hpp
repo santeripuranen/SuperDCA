@@ -29,7 +29,7 @@
 namespace superdca {
 
 template< typename MatrixViewT >
-auto gauge_shift( MatrixViewT&& J_ij, bool transpose_input=false )
+auto ising_gauge( MatrixViewT&& J_ij, bool transpose_input=false )
 {
 	// J_ij: J_ij as estimated from from g_i.
 
@@ -54,13 +54,12 @@ auto gauge_shift( MatrixViewT&& J_ij, bool transpose_input=false )
 	}
 }
 
-template< typename RealT, std::size_t SquareMatrixSize >
-auto gauge_shift( Coupling_matrix_view<RealT,SquareMatrixSize>& Js, std::size_t n, bool transpose_input=false )
+template< typename AccessOrder, std::size_t BlockSize, typename RealT >
+auto ising_gauge( Coupling_matrix_view<AccessOrder,BlockSize,RealT>& Js, std::size_t n, bool transpose_input=false )
 {
 	// J_ij: J_ij as estimated from from g_i.
-	auto J_ij = convert( Js, n );
 
-	//std::cout << "J(" << n << "): " << J_ij << std::endl;
+	auto J_ij = convert( Js, n );
 
 	// Shift the coupling estimates into the Ising gauge.
 	const auto Jt_ij = transpose(J_ij);
@@ -72,9 +71,6 @@ auto gauge_shift( Coupling_matrix_view<RealT,SquareMatrixSize>& Js, std::size_t 
 	    const auto J_ij_mean2 = mean( J_ij );
 
 		return Jt_ij - repmat(J_ij_mean) - repmat(J_ij_mean2,true) + J_ij_mean_mean;
-	    //auto mat = Jt_ij - repmat(J_ij_mean) - repmat(J_ij_mean2,true) + J_ij_mean_mean;
-		//if( negative_count(mat) != 0 ) { std::cout << "Gauge-shifted matrix contains " << negative_count(mat) << " non-positive elements" << std::endl; }
-		//return mat;
 	}
 	else
 	{
@@ -85,21 +81,7 @@ auto gauge_shift( Coupling_matrix_view<RealT,SquareMatrixSize>& Js, std::size_t 
 		return J_ij - repmat(J_ij_mean) - repmat(J_ij_mean2,true) + J_ij_mean_mean;
 	}
 }
-/*
-template< typename RealT, std::size_t Extent >
-std::array< std::array<RealT,Extent>, Extent > gauge_shift( const std::array< std::array<RealT,Extent>, Extent >& J_ij )
-{
-	std::cout << "gauge_shift( " << typeid(J_ij).name() << " )" << std::endl;
-    // J_ij: J_ij as estimated from from g_i.
 
-    // Shift the coupling estimates into the Ising gauge.
-    const auto J_ij_mean = mean(J_ij);
-    const auto J_ij_mean_mean = mean(J_ij_mean);
-    const auto J_ij_mean2 = mean( transpose(J_ij) );
-
-    return J_ij - repmat(J_ij_mean) - repmat(J_ij_mean2,true) + J_ij_mean_mean;
-}
-*/
 } // namespace superdca
 
 #endif // PLMDCA_UTILITY_HPP
