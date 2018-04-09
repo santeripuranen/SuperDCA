@@ -13,7 +13,7 @@ sh apply_CppNumericalSolvers_patch.sh
 sh apply_vecmathlib_patch.sh
 ```
 
-The first patch will extend the CppNumericalSolvers interface such that the LBFGS optimizer code is faster when used by SuperDCA. The second patch will fix a gcc compilation issue.
+The first patch will extend the CppNumericalSolvers interface such that the LBFGS optimizer code is faster when used by SuperDCA. The second patch will fix a gcc compilation issue when using versions older than v7.3.
 
 In order to compile the SuperDCA binary, go to the `SuperDCA/build` directory (create one if necessary; in-source builds are strongly discouraged) and give these commands:
 
