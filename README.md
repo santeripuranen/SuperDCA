@@ -4,7 +4,7 @@
 ```
 git clone --recursive https://github.com/santeripuranen/SuperDCA.git
 ```
-See how to compile [here](SuperDCA).
+See how to compile [here](SuperDCA/README.md#building-superdca).
 
 ## About
 
