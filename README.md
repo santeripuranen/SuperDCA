@@ -4,6 +4,7 @@
 ```
 git clone --recursive https://github.com/santeripuranen/SuperDCA.git
 ```
+See how to compile [here](SuperDCA).
 
 ## About
 
@@ -37,7 +38,7 @@ The main output file (*.out*) of SuperDCA contains a white space delimited, unso
 SuperDCA was developed as part of an academic research project. Please cite (all three, if possible):
 
 * Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher, Jukka Corander, Erik Aurell (2017).
-SuperDCA for genome-wide epistasis analysis. doi: https://doi.org/10.1101/182527
+SuperDCA for genome-wide epistasis analysis. bioRxiv, doi: https://doi.org/10.1101/182527
 
 * Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander (2017). Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. PloS Genetics, doi: https://doi.org/10.1371/journal.pgen.1006508
 
