@@ -4,7 +4,7 @@
 
 SuperDCA is a tool for global direct couplings analysis (DCA) of input genome alignments. SuperDCA implements the pseudo-likelihood maximization DCA algorithm (plmDCA) in a fairly efficient manner and is capable of inferring parameters for genome alignments with at least up to 10^5 significant loci and thousands of samples in a shared-memory multi-core compute environment.
 
-## [Building SuperDCA](#building-superdca)
+## Building SuperDCA[](#building-superdca)
 
 Before compiling SuperDCA we need to patch external code dependencies. Go to the `SuperDCA/externals` directory and apply the patches:
 
