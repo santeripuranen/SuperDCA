@@ -37,9 +37,9 @@ The main output file (*.out*) of SuperDCA contains a white space delimited, unso
 
 SuperDCA was developed as part of an academic research project. Please cite (all three, if possible):
 
-* Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher 4 and Jukka Corander. SuperDCA for genome-wide epistasis analysis. /Microbial Genomics/ 2018;4, doi: https://doi.org/10.1099/mgen.0.000184
+* Santeri Puranen, Maiju Pesonen, Johan Pensar, Ying Ying Xu, John A. Lees, Stephen D. Bentley, Nicholas J. Croucher 4 and Jukka Corander. SuperDCA for genome-wide epistasis analysis. *Microbial Genomics* 2018;4, doi: https://doi.org/10.1099/mgen.0.000184
 
-* Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander (2017). Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. PloS Genetics, doi: https://doi.org/10.1371/journal.pgen.1006508
+* Marcin J. Skwark, Nicholas J Croucher, Santeri Puranen, Claire Chewapreecha, Maiju Pesonen, Ying Ying Xu, Paul Turner, Simon R. Harris, Stephen B. Beres, James M. Musser, Julian Parkhill, Stephen D. Bentley, Erik Aurell, Jukka Corander. Interacting networks of resistance, virulence and core machinery genes identified by genome-wide epistasis analysis. *PloS Genetics* 2017, doi: https://doi.org/10.1371/journal.pgen.1006508
 
 * https://github.com/santeripuranen/SuperDCA/
 
