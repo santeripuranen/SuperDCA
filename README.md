@@ -14,7 +14,7 @@ SuperDCA is a tool for global [Direct Coupling Analysis (DCA)](https://en.wikipe
 
 * [SuperDCA](SuperDCA) contains the actual source code along with compile instructions.
 * [binaries](binaries) contains precompiled SuperDCA binaries.
-* [pneumo_couplings](pneumo_couplings) contains SuperDCA couplings output for *S pneumoniae* genome data sets.
+* [MGen_2018_Tables_S1-S3](MGen_2018_Tables_S1-S3) contains SuperDCA couplings output for *S pneumoniae* genome data sets used in our primary reference.
 * [ranking_scripts](ranking_scripts) contains a post-processing script that can be used on SuperDCA couplings output.
 
 ## Basic usage
