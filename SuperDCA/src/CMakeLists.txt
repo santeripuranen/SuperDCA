@@ -41,15 +41,10 @@ if( SUPERDCA_SOURCES )
 endif()
 
 # general optimization flags	
-set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -O3 -mavx -funroll-loops -fabi-version=6 --param max-inline-insns-auto=100 --param early-inlining-insns=200 -flto -ffat-lto-objects" )
-set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fdata-sections -ffunction-sections -Wl,--gc-sections" )
-set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" )
-set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fwhole-program" )
-set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fdevirtualize-at-ltrans" )
-#set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -fprefetch-loop-arrays" ) # seems to make SuperDCA run slower
+set( SUPERDCA_GCC_OPTIMIZATION_FLAGS "${SUPERDCA_GCC_OPTIMIZATION_FLAGS} -O3 -mavx -ftree-vectorize -fwhole-program -flto -ffat-lto-objects" )
 
 # release build flags
-set( SUPERDCA_GCC_RELEASE_FLAGS "-w -Wl,--strip-all" )
+set( SUPERDCA_GCC_RELEASE_FLAGS "-w -Wl,--strip-all -fvisibility=hidden -fvisibility-inlines-hidden" )
 set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall ${SUPERDCA_GCC_OPTIMIZATION_FLAGS} ${SUPERDCA_GCC_RELEASE_FLAGS}")
 
 # debug build flags
