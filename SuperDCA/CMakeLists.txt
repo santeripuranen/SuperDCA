@@ -15,6 +15,7 @@ set( ${PROJECT_NAME}_INCLUDE_DIR ${${PROJECT_NAME}_SOURCE_DIR}/include )
 
 include( SuperDCA_options.cmake NO_POLICY_SCOPE )
 include( git_commit_info.cmake NO_POLICY_SCOPE )
+include( set_default_build_type NO_POLICY_SCOPE )
 
 add_subdirectory( externals )
 
