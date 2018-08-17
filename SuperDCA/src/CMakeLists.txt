@@ -11,7 +11,6 @@ include_directories(
 	${APEGRUNT_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${Boost_INCLUDE_DIR}
-	${CUDA_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
 	${TBB_INCLUDE_DIRS}
 	${CPPNUMERICALSOLVERS_INCLUDE_DIR}
@@ -38,6 +37,7 @@ if( SUPERDCA_SOURCES )
 		${SUPERDCA_SOURCES}
 	)
 	target_link_libraries( SuperDCA apegrunt )
+	set_target_properties( SuperDCA PROPERTIES COMPILE_FLAGS "--std=c++14" )
 endif()
 
 # general optimization flags	
@@ -51,26 +51,18 @@ set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall ${SUPERDCA_GCC_OP
 set( SUPERDCA_GCC_DEBUG_FLAGS "-pg -g -ftree-vectorizer-verbose=2" )
 set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall ${SUPERDCA_GCC_OPTIMIZATION_FLAGS} ${SUPERDCA_GCC_DEBUG_FLAGS}")
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SUPERDCA_GCC_OPTIMIZATION_FLAGS}" )
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SUPERDCA_GCC_OPTIMIZATION_FLAGS}" )
 
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wignored-attributes" )
-
+# set preferred linker
 set( CMAKE_LINKER "ld.gold" )
 
 # Add Boost libraries
 if( NOT SUPERDCA_NO_BOOST )
-	set_target_properties( SuperDCA PROPERTIES COMPILE_FLAGS "--std=c++14 ${SUPERDCA_CXX_STD_VERSION_FLAG} ${SUPERDCA_GCC_OPTIMIZATION_FLAGS}" )
 	target_link_libraries( SuperDCA ${Boost_LIBRARIES} )
-endif()
-
-# Add CUDA libraries
-if( NOT SUPERDCA_NO_CUDA )
-	target_link_libraries( SuperDCA ${CUDA_LIBRARIES} )
 endif()
 
 # Add TBB libraries
 if( NOT SUPERDCA_NO_TBB )
-	#superdca_message( "TBB_LIBRARIES=${TBB_LIBRARIES}" )
 	target_link_libraries( SuperDCA ${TBB_LIBRARIES} )
 endif()
 
