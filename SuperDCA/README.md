@@ -18,7 +18,7 @@ The first patch will extend the CppNumericalSolvers interface such that the LBFG
 In order to compile the SuperDCA binary, go to the `SuperDCA/build` directory (create one if necessary; in-source builds are strongly discouraged) and give these commands:
 
 ```
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake ..
 make SuperDCA
 ```
 
