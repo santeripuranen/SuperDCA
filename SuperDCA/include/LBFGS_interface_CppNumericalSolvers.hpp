@@ -50,10 +50,11 @@
 
 #include "apegrunt/aligned_allocator.hpp"
 
+#include "misc/Array_view.hpp"
+
 #include "plmDCA_options.h"
 #include "plmDCA_optimizer_parameters.hpp"
 
-#include "Array_view.hpp"
 
 /** A function object that implements the cost function
 	interface used by CppNumbericalSolvers.
@@ -84,9 +85,11 @@ public:
 
 	real_t value( const typename cppoptlib::Problem<real_t>::TVector &x )
 	{
+ 		assert( m_parameters.check_solution() );
 		m_parameters.set_solution( x.data() ); // set parameter estimate ptr
  		m_parameters.set_gradient( m_gradient.data(), true ); // set gradient ptr and set all values to zero
  		superdca::plmDCA_objective_fval_and_gradient<ParametersT,double>( m_parameters );
+ 		assert( m_parameters.check_gradient() );
 
 		++m_nfeval;
 		return m_parameters.get_fvalue();
@@ -95,9 +98,11 @@ public:
 	real_t value_no_set_gradient( const typename cppoptlib::Problem<real_t>::TVector &x )
 	{
 		m_parameters.set_solution( x.data() ); // set parameter estimate ptr
+ 		assert( m_parameters.check_solution() );
  		superdca::plmDCA_objective_fval_and_gradient<ParametersT,double>( m_parameters );
-
 		++m_nfeval;
+ 		assert( m_parameters.check_gradient() );
+		assert( m_parameters.check_fvalue() );
 		return m_parameters.get_fvalue();
 	}
 	//> Gradient function (overrides the default finite difference implementation)
@@ -108,12 +113,12 @@ public:
 	}
 
 	// override virtual base
-	real_t value_and_gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad )
+	real_t value_and_gradient( const typename cppoptlib::Problem<real_t>::TVector &x, typename cppoptlib::Problem<real_t>::TVector &grad ) override
 	{
  		m_parameters.set_gradient( grad.data(), true ); // set gradient ptr and set all values to zero
-		this->value_no_set_gradient(x);
+		return this->value_no_set_gradient(x);
 		//this->gradient( x, grad );
-		return m_parameters.get_fvalue();
+		//return m_parameters.get_fvalue();
 	}
 
 	std::size_t get_nfeval() const { return m_nfeval; }

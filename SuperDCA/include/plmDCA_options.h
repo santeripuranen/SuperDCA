@@ -50,17 +50,11 @@ public:
 	static std::ostream* err_stream();
 	static void set_err_stream( std::ostream* err );
 
-	static double reweighting_threshold();
-
 	static uint fp_precision();
-
-	// alignment pre-processing
-	static bool output_weights();
-	static bool reweight();
 
 	// algorithm and scoring
 	static bool norm_of_mean_scoring();
-	static bool store_parameter_matrices_to_disk();
+	static bool output_parameter_matrices();
 	static void set_keep_n_best_couples( int n );
 	static int keep_n_best_couples();
 
@@ -95,15 +89,11 @@ private:
 	static int s_begin_locus;
 	static int s_end_locus;
 
-	static double s_reweighting_threshold;
-	static bool s_output_weights;
-	static bool s_no_reweighting;
-
 	static bool s_no_estimate;
 	static bool s_no_dca;
 	static bool s_no_coupling_output;
 
-	static bool s_store_parameter_matrices_to_disk;
+	static bool s_output_parameter_matrices;
 
 	static std::ostream *s_out;
 	static std::ostream *s_err;
@@ -136,10 +126,8 @@ private:
 	static void s_init_use_cuda( bool use_cuda );
 #endif // SUPERDCA_NO_CUDA
 	static void s_init_fp_precision( uint fp_precision );
-	static void s_init_reweighting_threshold( double threshold );
-	static void s_init_no_reweighting( bool flag );
-	static void s_init_output_weights( bool flag );
 	static void s_init_norm_of_mean_scoring( bool flag );
+	static void s_init_output_parameter_matrices( bool flag );
 	static void s_init_keep_n_best_couples( int n );
 	static void s_init_gradient_threshold( double val );
 	static void s_init_lambda_h( double val );

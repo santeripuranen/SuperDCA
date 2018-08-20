@@ -44,11 +44,6 @@ int plmDCA_options::s_nodes = 1;
 #endif // SUPERDCA_NO_MPI
 bool plmDCA_options::s_use_cuda = false;
 
-double plmDCA_options::s_reweighting_threshold = 0.9; // default=1.0, i.e. all elements should be identical for two sequences to be considered as one
-
-bool plmDCA_options::s_output_weights = false;
-bool plmDCA_options::s_no_reweighting = false;
-
 bool plmDCA_options::s_no_estimate = true; //false;
 bool plmDCA_options::s_no_dca = false;
 bool plmDCA_options::s_no_coupling_output = false;
@@ -56,7 +51,7 @@ bool plmDCA_options::s_no_coupling_output = false;
 uint plmDCA_options::s_fp_precision = 32;
 bool plmDCA_options::s_norm_of_mean_scoring = false;
 int plmDCA_options::s_keep_n_best_couples = 1e7;
-bool plmDCA_options::s_store_parameter_matrices_to_disk = false;
+bool plmDCA_options::s_output_parameter_matrices = false;
 
 double plmDCA_options::s_gradient_threshold = 1e-3;
 double plmDCA_options::s_lambda_h = -1.0;
@@ -104,15 +99,10 @@ void plmDCA_options::set_threads( int nthreads ) { s_threads = nthreads; }
 void plmDCA_options::set_threads( int nthreads ) { } // do nothing
 #endif // SUPERDCA_NO_TBB
 
-// alignment preprocessing
-double plmDCA_options::reweighting_threshold() { return s_reweighting_threshold; }
-bool plmDCA_options::reweight() { return !s_no_reweighting; }
-bool plmDCA_options::output_weights() { return s_output_weights; }
-
 // algorithm and scoring
 uint plmDCA_options::fp_precision() { return s_fp_precision; }
 bool plmDCA_options::norm_of_mean_scoring() { return s_norm_of_mean_scoring; }
-bool plmDCA_options::store_parameter_matrices_to_disk() { return s_store_parameter_matrices_to_disk; }
+bool plmDCA_options::output_parameter_matrices() { return s_output_parameter_matrices; }
 
 int plmDCA_options::keep_n_best_couples() { return s_keep_n_best_couples; }
 void plmDCA_options::set_keep_n_best_couples( int n ) { s_keep_n_best_couples=n; }
@@ -132,14 +122,9 @@ void plmDCA_options::m_init()
 {
 	namespace po = boost::program_options;
 
-	m_alignment_options.add_options()
-		("no-reweighting", po::bool_switch( &plmDCA_options::s_no_reweighting )->default_value(plmDCA_options::s_no_reweighting)->notifier(plmDCA_options::s_init_no_reweighting), "Do not reweight samples i.e. do not try to correct for population structure.")
-		("reweighting-threshold", po::value< double >( &plmDCA_options::s_reweighting_threshold )->default_value(plmDCA_options::s_reweighting_threshold)->notifier(plmDCA_options::s_init_reweighting_threshold), "Fraction of identical positions required for two sequences to be considered identical.")
-		("output-weights", po::bool_switch( &plmDCA_options::s_output_weights )->default_value(plmDCA_options::s_output_weights)->notifier(plmDCA_options::s_init_output_weights), "Write sample weights to file.")
-	;
 	m_algorithm_options.add_options()
-		("norm-of-mean-scoring", po::bool_switch( &plmDCA_options::s_norm_of_mean_scoring )->default_value(plmDCA_options::s_norm_of_mean_scoring)->notifier(plmDCA_options::s_init_norm_of_mean_scoring), "Calculate coupling score as the mean of J(ij) and J(ji) matrices (may require tons of memory).")
-//      ("store_parameter_matrices_to_disk", po::bool_switch( &plmDCA_options::s_store_parameter_matrices_to_disk )->default_value(plmDCA_options::s_store_parameter_matrices_to_disk)->notifier(plmDCA_options::s_init_store_parameter_matrices_to_disk), "Store parameter matrices to disk (may require tons of disk space).")
+		("norm-of-mean-scoring", po::bool_switch( &plmDCA_options::s_norm_of_mean_scoring )->default_value(plmDCA_options::s_norm_of_mean_scoring)->notifier(plmDCA_options::s_init_norm_of_mean_scoring), "Calculate coupling score the original plmDCA way as the mean of J(ij) and J(ji) matrices (may require lots of memory).")
+		("output-parameter-matrices", po::bool_switch( &plmDCA_options::s_output_parameter_matrices )->default_value(plmDCA_options::s_output_parameter_matrices)->notifier(plmDCA_options::s_init_output_parameter_matrices), "Write parameter matrices to file (may require lots of disk space).")
 //		("keep-n-best-couples", po::value< int >( &plmDCA_options::s_keep_n_best_couples )->default_value(plmDCA_options::s_keep_n_best_couples)->notifier(plmDCA_options::s_init_keep_n_best_couples), "The number of best solutions that are stored (-1=keep all). Has huge effect on the amount of memory used.")
 
 		("gradient-threshold", po::value< double >( &plmDCA_options::s_gradient_threshold )->default_value(plmDCA_options::s_gradient_threshold)->notifier(plmDCA_options::s_init_gradient_threshold), "L-BFGS gradient threshold stopping criterion.")
@@ -199,22 +184,6 @@ void plmDCA_options::s_init_verbose( bool verbose )
 	}
 }
 
-void plmDCA_options::s_init_no_reweighting( bool flag )
-{
-	if( flag && s_verbose && s_out )
-	{
-		*s_out << "plmDCA: do not reweight samples (i.e. do not try to correct for population structure).\n";
-	}
-}
-
-void plmDCA_options::s_init_output_weights( bool flag )
-{
-	if( flag && s_verbose && s_out )
-	{
-		*s_out << "plmDCA: output sample weights to file.\n";
-	}
-}
-
 #ifndef SUPERDCA_NO_TBB // Threading with Threading Building Blocks
 void plmDCA_options::s_init_threads( int nthreads )
 {
@@ -253,19 +222,19 @@ void plmDCA_options::s_init_fp_precision( uint fp_precision )
 	}
 }
 
-void plmDCA_options::s_init_reweighting_threshold( double threshold )
-{
-	if( s_verbose && s_out )
-	{
-		*s_out << "plmDCA: reweighting threshold set to " << threshold << ".\n";
-	}
-}
-
 void plmDCA_options::s_init_norm_of_mean_scoring( bool flag )
 {
 	if( s_verbose && s_out && flag )
 	{
 		*s_out << "plmDCA: calculate coupling score as the mean of J(ij) and J(ji) matrices (may require tons of memory).\n";
+	}
+}
+
+void plmDCA_options::s_init_output_parameter_matrices( bool flag )
+{
+	if( s_verbose && s_out && flag )
+	{
+		*s_out << "plmDCA: output parameter matrices to file (may require lots of disk space).\n";
 	}
 }
 
@@ -309,14 +278,6 @@ void plmDCA_options::s_init_lambda_J( double val )
 	if( s_verbose && s_out && val >= 0.0 )
 	{
 		*s_out << "plmDCA: lambda_J set to " << val <<".\n";
-	}
-}
-
-void plmDCA_options::s_init_store_parameter_matrices_to_disk( bool flag )
-{
-	if( s_verbose && s_out && flag )
-	{
-		*s_out << "plmDCA: store coupling matrices to disk (may require tons of disk space).\n";
 	}
 }
 

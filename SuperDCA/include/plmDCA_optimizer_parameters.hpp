@@ -25,77 +25,18 @@
 #include <algorithm>
 #include <cstring> // for std::memset
 
-#include <boost/math/special_functions/gamma.hpp>
-
 #include "apegrunt/Apegrunt_utility.hpp"
+#include "apegrunt/Alignment_StateVector_weights.hpp"
 #include "apegrunt/aligned_allocator.hpp"
 
-#include "Array_view.hpp"
-#include "Matrix_kernel_access_order.hpp"
-#include "Coupling_matrix_view.hpp"
+#include "misc/Array_view.hpp"
+#include "misc/Matrix_kernel_access_order.hpp"
+#include "misc/Coupling_matrix_view.hpp"
+#include "misc/type_traits.hpp"
+
+#include "plmDCA_options.h"
 
 namespace superdca {
-
-template< typename StateT, typename RealT=double >
-std::vector<RealT> calculate_weights( apegrunt::Alignment_ptr<StateT> alignment )
-{
-	using real_t = RealT;
-
-	auto ali = alignment->subscript_proxy();
-
-	const real_t threshold = plmDCA_options::reweighting_threshold();
-	const std::size_t n_seqs = alignment->size();
-
-	std::vector<std::size_t> int_weights; int_weights.reserve( n_seqs );
-	for( const auto& seq_ptr: *alignment ) { int_weights.push_back( seq_ptr->multiplicity() ); }
-
-	real_t min_identity = 1.0;
-	real_t max_identity = 0.0;
-
-	//std::cout << "Get distance matrix" << std::endl;
-	const auto dmat = *(alignment->distance_matrix());
-	//std::cout << "  done" << std::endl;
-
-	std::size_t nonidentical_pairs = 0;
-	for( std::size_t i = 0; i < n_seqs; ++i )
-	{
-		const auto seq_i = ali[i]; // (*alignment)[i];
-		for( std::size_t j = 0; j < i; ++j )
-		{
-			//std::cout << "seqs \"" << seq_i->id_string()  << "\" and \"" << (*alignment)[j]->id_string() << "\" are " << fract_identical( seq_i, (*alignment)[j] )*100. << "% identical" << std::endl;
-			//if( fract_identical( seq_i, (*alignment)[j] ) >= threshold )
-			const std::size_t n_elem = std::min( seq_i->size(), ali[j]->size() );
-			const auto identity = real_t( n_elem - dmat[ i*(i-1)/2+j ]) / real_t(n_elem);
-			min_identity = std::min( min_identity, identity );
-			max_identity = std::max( max_identity, identity );
-
-			if( identity >= threshold )
-			{
-				//int_weights[i] += (*alignment)[j]->multiplicity();
-				int_weights[i] += ali[j]->multiplicity();
-				int_weights[j] += seq_i->multiplicity();
-			}
-			else
-			{
-				++nonidentical_pairs;
-			}
-		}
-	}
-
-	if( plmDCA_options::verbose() )
-	{
-		*plmDCA_options::out_stream()
-			<< "plmDCA: sequence identity min=" << min_identity << " max=" << max_identity << " reweighting threshold=" << threshold << "\n"
-			<< "plmDCA: # of non-identical pairs=" << nonidentical_pairs << "\n";
-	}
-
-	std::vector<real_t> weights; weights.reserve(n_seqs);
-
-	using boost::get;
-	for( auto&& int_weights_and_seq : zip_range(int_weights,*alignment) ) { weights.push_back( get<1>(int_weights_and_seq)->multiplicity() / real_t( get<0>(int_weights_and_seq) ) ); } // 1/weight * multiplicity
-
-	return weights;
-}
 
 template< typename RealT, typename StateT >
 class plmDCA_optimizer_parameters
@@ -112,15 +53,14 @@ public:
 	using logpots_t = std::vector< std::array<real_t,N>, allocator_t >;
 	using nodebels_t = logpots_t;
 
-	//using coupling_matrix_view_t = Coupling_matrix_view<real_t,N>;
-	//using coupling_matrix_view_t = Coupling_matrix_view<MATRICES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
-	using coupling_matrix_view_t = Coupling_matrix_view<STATES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
+	//using coupling_matrix_view_t = apegrunt::Coupling_matrix_view<apegrunt::MATRICES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
+	using coupling_matrix_view_t = apegrunt::Coupling_matrix_view<apegrunt::STATES_AccessOrder_tag<N>,apegrunt::StateBlock_size,real_t>;
 
-	using array_view_t = Array_view< real_t, N >;
-	using matrix_view_t = Array_view< array_view_t, extent<array_view_t>::value >;
+	using array_view_t = apegrunt::Array_view< real_t, N >;
+	using matrix_view_t = apegrunt::Array_view< array_view_t, apegrunt::extent<array_view_t>::value >;
 
-	using matrix_view_array_t = Array_view< matrix_view_t >;
-	using array_view_array_t = Array_view< array_view_t >;
+	using matrix_view_array_t = apegrunt::Array_view< matrix_view_t >;
+	using array_view_array_t = apegrunt::Array_view< array_view_t >;
 
 	using weights_t = std::shared_ptr< std::vector<real_t> >;
 	using frequencies_t = std::shared_ptr< std::vector<frequencies_type> >;
@@ -141,7 +81,7 @@ public:
 	  m_solution(nullptr),
 	  m_gradient(nullptr),
 	  m_fvalue(0),
-	  m_B_eff(0),
+	  m_n_eff(0),
 	  m_lambda_J(0),
 	  m_lambda_h(0)
 	{
@@ -163,7 +103,7 @@ public:
 	  m_solution(nullptr),
 	  m_gradient(nullptr),
 	  m_fvalue(other.m_fvalue),
-	  m_B_eff(other.m_B_eff),
+	  m_n_eff(other.m_n_eff),
 	  m_lambda_J(other.m_lambda_J),
 	  m_lambda_h(other.m_lambda_h)
 	{
@@ -189,8 +129,26 @@ public:
 	}
 	real_t* get_solution() { return m_solution; }
 
+#ifndef NDEBUG
+	bool check_solution() const
+	{
+		std::size_t nnan = 0;
+		for( std::size_t i=0; i < this->get_dimensions(); ++i ) { std::isnan( *(m_solution+i) ) && ++nnan; }
+		if( nnan != 0 ) { std::cout << "solution has " << nnan << " nan entries\n"; }
+		return (0 == nnan);
+	}
+#endif // NDEBUG
+
 	void set_fvalue( real_t fval ) { m_fvalue=fval; }
 	real_t get_fvalue() const { return m_fvalue; }
+
+#ifndef NDEBUG
+	bool check_fvalue() const
+	{
+		if( std::isnan( m_fvalue ) ) { std::cout << "fvalue is " << m_fvalue << "\n"; }
+		return !std::isnan( m_fvalue );
+	}
+#endif // NDEBUG
 
 	void set_gradient( real_t *gradient, bool clear=false )
 	{
@@ -208,6 +166,16 @@ public:
 		}
 	}
 	real_t* get_gradient() { return m_gradient; }
+
+#ifndef NDEBUG
+	bool check_gradient() const
+	{
+		std::size_t nnan = 0;
+		for( std::size_t i=0; i < this->get_dimensions(); ++i ) { std::isnan( *(m_gradient+i) ) && ++nnan; }
+		if( nnan != 0 ) { std::cout << "gradient has " << nnan << " nan entries\n"; }
+		return (0 == nnan);
+	}
+#endif // NDEBUG
 
 	//> SuperDCA::plmDCA interface
 	apegrunt::Alignment_ptr<state_t> get_alignment() { return m_alignments.back(); }
@@ -242,7 +210,7 @@ public:
 	coupling_matrix_view_t get_grad_Jr_view( real_t* gradient ) { return coupling_matrix_view_t( gradient, this->n_Jr() ); }
 	array_view_t get_grad_hr_view( real_t* gradient ) { return array_view_t( gradient+this->Jr_size(), this->hr_size() ); }
 
-	std::size_t Jr_size() const { return this->n_Jr()*extent<matrix_view_t>::value*N; }
+	std::size_t Jr_size() const { return this->n_Jr()*apegrunt::extent<matrix_view_t>::value*N; }
 	std::size_t hr_size() const { return N; }
 	std::size_t n_Jr() const { return m_nloci; }
 
@@ -258,36 +226,38 @@ private:
 	{
 		using apegrunt::cbegin;
 		using apegrunt::cend;
-		m_B_eff = std::accumulate( cbegin(m_weights), cend(m_weights), 0.0 );
+		m_n_eff = std::accumulate( cbegin(m_weights), cend(m_weights), 0.0 );
 
-		real_t auto_lambda = ( m_B_eff > 500.0 ) ? 0.1 : 1.0 - ((1.0-0.1) * m_B_eff / 500.0);
+		real_t auto_lambda = ( m_n_eff > 500.0 ) ? 0.1 : 1.0 - ((1.0-0.1) * m_n_eff / 500.0);
 
 		if( plmDCA_options::lambda_J() < 0.0 )
 		{
 			plmDCA_options::set_lambda_J( auto_lambda/2.0 );
 			// Automatic specification of regularization strength based on B_eff. B_eff>500 means the standard regularization 0.1 is used, while B_eff<=500 means a higher regularization is chosen.
-			m_lambda_J = auto_lambda * m_B_eff/2.0; // Divide by 2 to keep the size of the coupling regularization equivalent to symmetric variant of plmDCA.
+			m_lambda_J = auto_lambda * m_n_eff/2.0; // Divide by 2 to keep the size of the coupling regularization equivalent to symmetric variant of plmDCA.
 		}
 		else
 		{
-			m_lambda_J = plmDCA_options::lambda_J() * m_B_eff;
+			m_lambda_J = plmDCA_options::lambda_J() * m_n_eff;
 		}
 
 		if( plmDCA_options::lambda_h() < 0.0 )
 		{
 			plmDCA_options::set_lambda_h( auto_lambda );
-			m_lambda_h = auto_lambda * m_B_eff;
+			m_lambda_h = auto_lambda * m_n_eff;
 		}
 		else
 		{
-			m_lambda_h = plmDCA_options::lambda_h() * m_B_eff;
+			m_lambda_h = plmDCA_options::lambda_h() * m_n_eff;
 		}
 
 		if( plmDCA_options::verbose() )
 		{
+			plmDCA_options::out_stream()->precision(4);
 			*plmDCA_options::out_stream()
-				<< "plmDCA: L=" << this->get_alignment()->n_loci() << " n=" << this->get_alignment()->size() << " n(effective)=" << m_B_eff << "\n"
-				<< "plmDCA: lambda_J=" << plmDCA_options::lambda_J() << " lambda_h=" << plmDCA_options::lambda_h() << "\n";
+				<< "plmDCA: L=" << this->get_alignment()->n_loci() << " n=" << this->get_alignment()->size() << " n(effective)=" << m_n_eff << "\n"
+				<< "plmDCA: lambda-J=" << plmDCA_options::lambda_J() << " lambda-h=" << plmDCA_options::lambda_h() << "\n";
+			plmDCA_options::out_stream()->flush();
 		}
 
 		this->cache_frequencies();
@@ -347,7 +317,6 @@ private:
 	}
 
 	//> SuperDCA::plmDCA
-	//std::vector< std::array<std::size_t,N> > m_allele_occurrence;
 	std::vector< apegrunt::Alignment_ptr<state_t> > m_alignments;
 	weights_t m_weights;
 	weights_t m_multiplicities;
@@ -365,7 +334,7 @@ private:
 	real_t *m_gradient;
 	real_t m_fvalue;
 
-	real_t m_B_eff;
+	real_t m_n_eff;
 	real_t m_lambda_J;
 	real_t m_lambda_h;
 

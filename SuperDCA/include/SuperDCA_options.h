@@ -27,8 +27,6 @@
 // Boost includes
 #include <boost/program_options.hpp>
 
-#include "SuperDCA_commons.h"
-
 namespace po = boost::program_options;
 
 namespace superdca {
@@ -44,15 +42,6 @@ public:
 	static bool CheckOptions( po::variables_map *varmap );
 
 	uint state() const;
-
-	bool has_alignment_filenames() const;
-	const std::vector< std::string >& get_alignment_filenames() const;
-
-	bool has_filterlist_filename() const;
-	const std::string& get_filterlist_filename() const;
-
-	bool has_samplelist_filename() const;
-	const std::string& get_samplelist_filename() const;
 
 	static bool output_SNPs();
 	static bool output_filtered_alignment();
@@ -105,10 +94,7 @@ private:
 	//static bool s_force_translation;
 	//static bool s_complementary_read;
 
-	std::vector< std::string > m_alignment_file_names;
-	std::string m_filterlist_file_name;
 	std::string m_locilist_file_name;
-	std::string m_samplelist_file_name;
 
 	static const std::string s_title_string;
 	static const std::string s_usage_string;

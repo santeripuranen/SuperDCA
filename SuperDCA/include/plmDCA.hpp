@@ -34,23 +34,30 @@
 //#include "tbb/mutex.h"
 #endif // SUPERDCA_NO_TBB
 
+#include "apegrunt/Apegrunt_IO_misc.hpp"
+#include "apegrunt/Apegrunt_utility.hpp"
 #include "apegrunt/Alignment.h"
 #include "apegrunt/StateVector_utility.hpp"
 #include "apegrunt/Alignment_utility.hpp"
+#include "apegrunt/Alignment_StateVector_weights.hpp"
 #include "apegrunt/Loci.h"
-#include "apegrunt/aligned_allocator.hpp"
+
+#include "misc/Stopwatch.hpp"
+#include "misc/Matrix_math.hpp"
+#include "misc/CouplingStorage.hpp"
+#include "misc/Gauges.hpp"
+
+#include "accumulators/distribution_std.hpp"
+#include "accumulators/distribution_bincount.hpp"
+#include "accumulators/distribution_ordered.hpp"
+#include "accumulators/distribution_cumulative.hpp"
+//#include "accumulators/distribution_generator_svg.hpp"
+#include "accumulators/distribution_generator_csv.hpp"
 
 #include "plmDCA_options.h"
 #include "plmDCA_optimizers.hpp"
 
-#include "Stopwatch.hpp"
-#include "Matrix_math.hpp"
-#include "plmDCA_utility.hpp"
-#include "SuperDCA_commons.h"
-
 namespace superdca {
-
-uint64_t get_pool_size( uint64_t n_loci ) { return ipow(n_loci,2)-n_loci; }
 
 template< typename RealT >
 struct OptimizerHistory
@@ -69,133 +76,6 @@ struct OptimizerHistory
 
 };
 
-template< typename RealT, uint States >
-class CouplingStorage
-{
-public:
-
-	enum { Q=States };
-
-	using real_t = RealT;
-	using internal_real_t = float;
-	using allocator_t = typename apegrunt::memory::AlignedAllocator<internal_real_t>;
-
-	using raw_matrix_t = std::array< internal_real_t, Q*Q >;
-
-	using array_view_t = Array_view< internal_real_t, Q >;
-	using matrix_view_t = Array_view< array_view_t, extent<array_view_t>::value >;
-
-	using matrix_view_array_t = Array_view< matrix_view_t >;
-
-	CouplingStorage() : m_dim1(0), m_dim2(0), m_has_dim1_mapping(false), m_has_dim2_mapping(false) { }
-
-	CouplingStorage( apegrunt::Loci_ptr dim1_loci, apegrunt::Loci_ptr dim2_loci )
-	: m_dim1(dim1_loci->size()),
-	  m_has_dim1_mapping(true),
-	  m_dim2(dim2_loci->size()),
-	  m_has_dim2_mapping(true)
-	{
-	    const uint64_t pool_size = m_dim1*m_dim2;
-
-	    {
-	    	std::size_t i=0;
-	    	for( const auto locus: dim1_loci ) { m_dim1_mapping[locus] = i; ++i; }
-	    }
-	    {
-	    	std::size_t j=0;
-	    	for( const auto locus: dim2_loci ) { m_dim2_mapping[locus] = j; ++j; }
-	    }
-
-		if( plmDCA_options::verbose() )
-		{
-			if( plmDCA_options::norm_of_mean_scoring() )
-			{
-				*plmDCA_options::out_stream()
-					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(raw_matrix_t)) << " of memory\n";
-			}
-			else
-			{
-				*plmDCA_options::out_stream()
-					<< "plmDCA: computation will require approximately " << apegrunt::memory_string(pool_size*sizeof(internal_real_t)) << " of memory\n";
-			}
-		}
-
-		this->allocate( pool_size );
-	}
-
-	inline std::size_t get_matrix_storage_size() const { return matrix_storage.size(); }
-	inline std::size_t get_coupling_storage_size() const { return coupling_storage.size(); }
-
-	inline matrix_view_array_t get_Ji_matrices( std::size_t i ) // zero-based locus index; returns a view to a row vector
-	{
-		if( m_has_dim1_mapping )
-		{
-			i = m_dim1_mapping[i];
-		}
-		assert( i < m_dim1 );
-		return matrix_view_array_t( matrix_storage[i*(m_dim1-1)].data(), (m_dim2-1) );
-	}
-
-	inline matrix_view_t get_Jij_matrix( std::size_t i, std::size_t j ) // zero-based locus index
-	{
-		if( m_has_dim1_mapping && m_has_dim2_mapping )
-		{
-			i = m_dim1_mapping[i];
-			j = m_dim2_mapping[j];
-		}
-		assert(  i < m_dim1 && j < m_dim2 );
-		return this->get_Ji_matrices(i)[j]; //coupling_storage[i*(m_dim1-1)+j]; // we store diagonal elements, too, even though they might never be used.
-	}
-
-	inline internal_real_t& get_Jij_score( std::size_t i, std::size_t j ) // zero-based locus index
-	{
-		if( m_has_dim1_mapping )
-		{
-			i = m_dim1_mapping[i];
-			j = m_dim2_mapping[j];
-		}
-		assert( i < m_dim1 && j < m_dim2 );
-		//return coupling_storage[i*(m_dim1-1)+j]; // we store diagonal elements, too, even though they might never be used.
-		return coupling_storage[i*m_dim1+j]; // we store diagonal elements, too, even though they might never be used.
-	}
-
-private:
-    std::vector< raw_matrix_t > matrix_storage;
-    std::vector< internal_real_t, allocator_t > coupling_storage;
-    std::size_t m_dim1;
-    std::size_t m_dim2;
-
-    using loci_mapping_t = std::map<std::size_t,std::size_t>;
-
-    bool m_has_dim1_mapping;
-    loci_mapping_t m_dim1_mapping;
-    bool m_has_dim2_mapping;
-    loci_mapping_t m_dim2_mapping;
-
-	bool allocate( std::size_t pool_size )
-	{
-		// Allocate matrix memory pool
-
-		try
-		{
-			if( plmDCA_options::norm_of_mean_scoring() )
-			{
-				matrix_storage.resize( pool_size );
-			}
-			else
-			{
-				coupling_storage.resize( pool_size );
-			}
-		}
-		catch(...)
-		{
-			*plmDCA_options::err_stream() << "plmDCA error: Exception of unknown type!\n\n";
-			Exit(EXIT_FAILURE);
-		}
-	}
-
-};
-
 template< typename RealT, typename StateT > //, typename OptimizerT >
 class plmDCA_solver
 {
@@ -204,7 +84,7 @@ public:
 	using state_t = StateT;
     using plmDCA_optimizer_parameters_t = plmDCA_optimizer_parameters<real_t,state_t>;
 
-	plmDCA_solver( std::vector< apegrunt::Alignment_ptr<state_t> > alignments, std::shared_ptr< std::vector<real_t> > weights, CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>& storage, OptimizerHistory<real_t>& log, std::size_t loci_slice )
+	plmDCA_solver( std::vector< apegrunt::Alignment_ptr<state_t> > alignments, std::shared_ptr< std::vector<real_t> > weights, apegrunt::CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>& storage, OptimizerHistory<real_t>& log, std::size_t loci_slice )
     : m_optimizer_parameters( alignments, weights ),
 	  m_Jij_storage(storage),
 	  m_optimizer_log(log),
@@ -219,13 +99,6 @@ public:
 		control.iterations = 2000;
 		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
 		m_optimizer.setStopCriteria( control );
-
-		// override default optimizer parameters
-		//auto& control = m_optimizer.ctrl();
-		//control.iterations = 2000; // default = 100000
-		//control.m = 10; // default = 10
-		//control.rate = 0.005; // default = 0.00005
-		//control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
 	}
 
 	plmDCA_solver( plmDCA_solver<real_t,state_t>&& other )
@@ -235,12 +108,10 @@ public:
 	  m_optimizer_objective( m_optimizer_parameters ), // initialize objective
 	  m_cputimer( other.m_cputimer ),
 	  m_solution( std::move( other.m_solution ) ), // each instance has its own private solution vector
-	  //m_optimizer( other.m_optimizer.criteria() ),
 	  m_loci_slice( std::move( other.m_loci_slice ) ),
 	  m_no_estimate( other.m_no_estimate ),
 	  m_no_dca( other.m_no_dca )
 	{
-		//m_optimizer.setStopCriteria( other.m_optimizer.criteria() );
 		auto control = cppoptlib::Criteria<real_t>();
 		control.iterations = 2000;
 		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
@@ -261,7 +132,6 @@ public:
 	  m_no_estimate( other.m_no_estimate ),
 	  m_no_dca( other.m_no_dca )
 	{
-		//m_optimizer.setStopCriteria( other.m_optimizer.criteria() );
 		auto control = cppoptlib::Criteria<real_t>();
 		control.iterations = 2000;
 		control.gradNorm = plmDCA_options::gradient_threshold(); // default = 1e-4; lower than 1e-3 will converge very slowly with large number of parameters
@@ -298,6 +168,7 @@ public:
 			solution.setZero();
 
 			// /* CppNumericalSolvers
+// /*
 			if( !m_no_dca )
 			{
 				dcatimer.start();
@@ -314,81 +185,94 @@ public:
 					<< " iter=" << info.iterations
 					<< " dca=" << dcatimer;
 			}
-
+// */
+/*
+			{
+				//apegrunt::get_weighted_covariance_matrix<plmDCA_optimizer_parameters_t,real_t>( m_optimizer_parameters );
+				apegrunt::get_weighted_covariance_matrix( m_optimizer_parameters, solution.data() );
+			}
+*/
 			m_cputimer.stop();
 
 			if( plmDCA_options::verbose() )
 			{
-				*plmDCA_options::out_stream() << "  " << r+1 << " / " << m_loci_slice << " (out of " << n_loci << ") locus=" << (*(m_optimizer_parameters.get_alignment()->get_loci_translation()))[r]+1
+				// buffer output in a ss before committing it to the ostream,
+				// in order to keep output clean when run in multi-threaded mode.
+				std::ostringstream oss;
+				oss << "  " << r+1 << " / " << m_loci_slice << " (out of " << n_loci << ") locus=" << (*(m_optimizer_parameters.get_alignment()->get_loci_translation()))[r]+1
 					<< ( m_no_dca ? "" : " " + dca_statistics.str() )
 					<< ( m_no_estimate ? "" : " estimate=" + estimate_elapsed_time.str() )
 					<< " total=" << m_cputimer << "\n";
+				*plmDCA_options::out_stream() << oss.str();
 			}
 
-			// Store all solutions (parameter matrices)
-
-			auto&& Jr_solution = m_optimizer_parameters.get_Jr_view(solution.data());
-
-			// Either:
-
-			// a) store full q-by-q Jij matrices
-			if( plmDCA_options::norm_of_mean_scoring() )
+			if( !plmDCA_options::no_coupling_output() )
 			{
-				//const auto&& solution = Jr_solution[n];
-				if( m_optimizer_parameters.number_of_alignments() > 1 )
+				// Store all solutions (parameter matrices)
+
+				auto&& Jr_solution = m_optimizer_parameters.get_Jr_view(solution.data());
+
+				// Either:
+
+				// a) store full q-by-q Jij matrices
+				if( plmDCA_options::norm_of_mean_scoring() )
 				{
-					for( std::size_t n=0; n < Jr_solution.size(); ++n )
+					//const auto&& solution = Jr_solution[n];
+					if( m_optimizer_parameters.number_of_alignments() > 1 )
 					{
-						auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n); // Jr_solution does not store self-interaction/diagonal element, but we can access the matrix as if it does
-						copy( Jr_solution, n, coupling_ij_matrix, false ); // false = do not transpose
-						//copy( gauge_shift( Jr_solution, n ), coupling_ij_matrix );
+						for( std::size_t n=0; n < Jr_solution.size(); ++n )
+						{
+							auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n); // Jr_solution does not store self-interaction/diagonal element, but we can access the matrix as if it does
+							copy( Jr_solution, n, coupling_ij_matrix, false ); // false = do not transpose
+							//copy( apegrunt::ising_gauge( Jr_solution, n ), coupling_ij_matrix );
+						}
+					}
+					else
+					{
+						// lower-triangular element matrices
+						for( std::size_t n=0; n < r; ++n )
+						{
+							auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n);
+							// transpose the upper-triangular element matrices
+							copy( Jr_solution, n, coupling_ij_matrix, true ); // true = transpose
+						}
+						// upper-triangular element matrices
+						for( std::size_t n=r+1; n < Jr_solution.size(); ++n )
+						{
+							auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n);
+							copy( Jr_solution, n, coupling_ij_matrix, false ); // false = do not transpose
+						}
 					}
 				}
+
+				// b) store the norms of Jij matrices, discarding the full q-by-q Jij matrices
 				else
 				{
-					// lower-triangular element matrices
-					for( std::size_t n=0; n < r; ++n )
-					{
-						auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n);
-						// transpose the upper-triangular element matrices
-						copy( Jr_solution, n, coupling_ij_matrix, true ); // true = transpose
-					}
-					// upper-triangular element matrices
-					for( std::size_t n=r+1; n < Jr_solution.size(); ++n )
-					{
-						auto&& coupling_ij_matrix = m_Jij_storage.get_Jij_matrix(r,n);
-						copy( Jr_solution, n, coupling_ij_matrix, false ); // false = do not transpose
-					}
-				}
-			}
+					//const auto&& Jr_solution = m_optimizer_parameters.get_initial_Jr();
 
-			// b) store the norms of Jij matrices, discarding the full q-by-q Jij matrices
-			else
-			{
-				//const auto&& Jr_solution = m_optimizer_parameters.get_initial_Jr();
-
-				if( m_optimizer_parameters.number_of_alignments() > 1 )
-				{
-					for( std::size_t n=0; n < Jr_solution.size(); ++n )
+					if( m_optimizer_parameters.number_of_alignments() > 1 )
 					{
-						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
-						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
+						for( std::size_t n=0; n < Jr_solution.size(); ++n )
+						{
+							auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
+							coupling_ij = apegrunt::frobenius_norm( apegrunt::ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
+						}
 					}
-				}
-				else
-				{
-					// lower-triangular element matrices
-					for( std::size_t n=0; n < r; ++n )
+					else
 					{
-						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
-						// transpose the lower-triangular element matrices
-						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n, true ), std::size_t(state_t::GAP) );
-					}
-					// upper-triangular element matrices
-					for( std::size_t n=r+1; n <	Jr_solution.size(); ++n )
-					{
-						auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
-						coupling_ij = frobenius_norm( ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
+						// lower-triangular element matrices
+						for( std::size_t n=0; n < r; ++n )
+						{
+							auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
+							// transpose the lower-triangular element matrices; we don't really need to do this, do we?
+							coupling_ij = apegrunt::frobenius_norm( apegrunt::ising_gauge( Jr_solution, n, true ), std::size_t(state_t::GAP) );
+						}
+						// upper-triangular element matrices
+						for( std::size_t n=r+1; n <	Jr_solution.size(); ++n )
+						{
+							auto& coupling_ij = m_Jij_storage.get_Jij_score(r,n);
+							coupling_ij = apegrunt::frobenius_norm( apegrunt::ising_gauge( Jr_solution, n ), std::size_t(state_t::GAP) );
+						}
 					}
 				}
 			}
@@ -403,7 +287,7 @@ private:
 
 	plmDCA_optimizer_parameters_t m_optimizer_parameters;
 
-	CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>& m_Jij_storage;
+	apegrunt::CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>& m_Jij_storage;
 
 	OptimizerHistory<real_t>& m_optimizer_log;
 
@@ -428,7 +312,7 @@ template< typename RealT, typename StateT > //, typename OptimizerT >
 plmDCA_solver<RealT,StateT> get_plmDCA_solver(
 	std::vector< apegrunt::Alignment_ptr<StateT> > alignments,
 	std::shared_ptr< std::vector<RealT> > weights,
-	CouplingStorage<RealT,apegrunt::number_of_states<StateT>::N>& storage,
+	apegrunt::CouplingStorage<RealT,apegrunt::number_of_states<StateT>::N>& storage,
 	OptimizerHistory<RealT>& log,
 	std::size_t loci_slice
 ) { return plmDCA_solver<RealT,StateT>( alignments, weights, storage, log, loci_slice ); }
@@ -453,8 +337,9 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 	{
 		for( auto alignment: alignments )
 		{
-			*plmDCA_options::out_stream() << "plmDCA: input alignment " << alignment->id_string() << " has " << alignment->size() << " sequences and " << alignment->n_loci() << " loci\n";
+			*plmDCA_options::out_stream() << "plmDCA: input alignment \"" << alignment->id_string() << "\" has " << alignment->size() << " sequences and " << alignment->n_loci() << " loci\n";
 		}
+		*plmDCA_options::out_stream() << std::endl;
 	}
 
 	const auto n_loci = alignments.front()->n_loci();
@@ -486,9 +371,10 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 		const std::size_t n_loci2 = alignments.back()->n_loci();
 		std::vector<std::size_t> loci; loci.reserve( n_loci2 );
 		for( std::size_t i = 0; i < n_loci2; ++i ) { loci.push_back(i); }
-		loci_list2 = apegrunt::make_Loci_list( loci );
+		loci_list2 = apegrunt::make_Loci_list( std::move(loci) );
 	}
 
+	// check that we actually have meaningful work to do
 	if( (!loci_list2 && loci_list->size() < 2) || (loci_list2 && loci_list2->size() == 0) )
     {
 		if( plmDCA_options::verbose() )
@@ -497,77 +383,66 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 		}
 		return false;
     }
-
-	// reserve space for optimizer statistics log
-	OptimizerHistory<real_t> optimizer_log(n_loci);
-
-	// initialize parameter storage
-	cputimer.start();
-    CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N> Jij_storage( loci_list, ( alignments.size() > 1 ? loci_list2 : loci_list ) );
-    //CouplingStorage<real_t,number_of_states<plmDCA_runtime_state_t>::N> Jij_storage( alignments.front()->n_loci(), loci_list->size() );
-
-    if( plmDCA_options::verbose() )
+	else //if( (!loci_list2 && loci_list->size() > 1) || (loci_list2 && loci_list2->size() != 0) )
     {
-		if( plmDCA_options::norm_of_mean_scoring() )
+		// prompt user with an estimate of how much memory we will attempt to allocate
+		if( plmDCA_options::verbose() )
 		{
-			// norm-of-mean scoring: the traditional plmDCA way of scoring couplings.
-			*plmDCA_options::out_stream() << "plmDCA: storage pool capacity is " << Jij_storage.get_matrix_storage_size() << " units\n";
+			*plmDCA_options::out_stream() << "plmDCA: "
+			<< apegrunt::CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N>::memory_estimate_string( loci_list->size(), ( alignments.size() > 1 ? loci_list2->size() : loci_list->size() ), plmDCA_options::norm_of_mean_scoring() )
+			<< std::endl;
 		}
-		else
-		{
-			// mean-of-norms scoring: the SuperDCA way of scoring couplings. The results (coupling strengths and relative order of couplings)
-			// are insignificant compared to norm-of-mean scoring in the statistically significant coupling range, but without the need
-			// to store an L-by-L J-matrix consisting of full q-by-q Jij submatrices. Instead, J-matrix elements are scalar, resulting in huge
-			// (factor of q^2) memory savings.
-			*plmDCA_options::out_stream() << "plmDCA: storage pool capacity is " << Jij_storage.get_coupling_storage_size() << " units\n";
-		}
-    }
-	cputimer.stop(); cputimer.print_timing_stats();
 
-    // calculate sample weight factors
-    if( (!loci_list2 && loci_list->size() > 1) || (loci_list2 && loci_list2->size() != 0) )
-    {
-    	std::shared_ptr< std::vector<real_t> > weights;
-    	if( plmDCA_options::reweight() )
-    	{
-			if( plmDCA_options::verbose() )
-			{
-				*plmDCA_options::out_stream() << "\nplmDCA: calculate sequence weights\n";
-			}
-			cputimer.start();
-			weights = std::make_shared< std::vector<real_t> >( calculate_weights( alignments.back() ) );
-			cputimer.stop(); cputimer.print_timing_stats(); *plmDCA_options::out_stream() << "\n";
-    	}
-    	else
-    	{
-    		weights = std::make_shared< std::vector<real_t> >( alignments.back()->size(), 1.0 );
-    	}
-
-    	// output weights
-		if( plmDCA_options::output_weights() )
-		{
-			// output weights
-			auto weights_file = get_unique_ofstream( alignments.front()->id_string()+".weights" );
-			auto& weights_stream = *weights_file.stream();
-			weights_stream << std::scientific;
-			weights_stream.precision(8);
-			for( auto w: *weights ) { weights_stream << w << "\n"; }
-		}
+		// check if user actually wants to run DCA
 
 		if( plmDCA_options::no_dca() )
 		{
 			if( plmDCA_options::verbose() )
 			{
-				*plmDCA_options::out_stream() << "plmDCA: exit on users request without performing DCA\n\n";
+				*plmDCA_options::out_stream() << "plmDCA: exit without performing DCA\n\n";
 			}
 			return true;
 		}
 
-		// Perform the optimization
+		cputimer.start();
+		// allocate memory for parameter storage
+		apegrunt::CouplingStorage<real_t,apegrunt::number_of_states<state_t>::N> Jij_storage( loci_list, ( alignments.size() > 1 ? loci_list2 : loci_list ) );
+
+		if( !plmDCA_options::no_coupling_output() )
+		{
+			if( plmDCA_options::norm_of_mean_scoring() )
+			{
+				Jij_storage.allocate_matrix_pool();
+			}
+			else
+			{
+				Jij_storage.allocate_scalar_pool();
+			}
+		}
+
 		if( plmDCA_options::verbose() )
 		{
-			*plmDCA_options::out_stream() << "\nplmDCA: let's learn!\n";
+			if( plmDCA_options::norm_of_mean_scoring() )
+			{
+				// norm-of-mean scoring: the traditional plmDCA way of scoring couplings.
+				*plmDCA_options::out_stream() << "plmDCA: storage pool capacity is " << Jij_storage.get_matrix_storage_size() << " units\n";
+			}
+			else
+			{
+				// mean-of-norms scoring: the SuperDCA way of scoring couplings. The change in results (coupling strengths and relative order
+				// of couplings) are insignificant compared to norm-of-mean scoring in the statistically significant coupling range, but without
+				// the need to store an L-by-L J-matrix consisting of full q-by-q Jij submatrices. Instead, J-matrix elements are scalar, resulting
+				// in huge (factor of q^2) memory savings.
+				*plmDCA_options::out_stream() << "plmDCA: storage pool capacity is " << Jij_storage.get_coupling_storage_size() << " units\n";
+			}
 		}
+		cputimer.stop();
+		if( plmDCA_options::verbose() ) { cputimer.print_timing_stats(); *plmDCA_options::out_stream() << "\n"; }
+
+		// reserve space for optimizer statistics log
+		OptimizerHistory<real_t> optimizer_log(n_loci);
+
+		// Perform the parameter inference
 
 		cputimer.start();
 
@@ -577,8 +452,14 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 			alignment->get_block_accounting();
 		}
 
+		auto weights = std::make_shared< decltype(apegrunt::get_weights( alignments.front() )) >( apegrunt::get_weights( alignments.front() ) );
+
 		// The parameter learning stage -- this is where the magic happens
 		auto plmDCA_ftor = get_plmDCA_solver( alignments, weights, Jij_storage, optimizer_log, loci_list->size() );
+		if( plmDCA_options::verbose() )
+		{
+			*plmDCA_options::out_stream() << "plmDCA: let's learn!\n"; plmDCA_options::out_stream()->flush();
+		}
 	#ifndef SUPERDCA_NO_TBB
 		tbb::parallel_reduce( tbb::blocked_range<decltype(loci_range.begin())>( loci_range.begin(), loci_range.end(), 1 ), plmDCA_ftor );
 	#else
@@ -591,18 +472,28 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 		std::ostringstream extension;
 		extension << apegrunt::Apegrunt_options::get_output_indexing_base() << "-based"; // indicate base index
 
+		namespace acc = boost::accumulators;
+
+		acc::accumulator_set<real_t, acc::stats<acc::tag::std(acc::from_distribution),acc::tag::distribution_bincount> > coupling_distribution(acc::tag::distribution::binwidth=0.0001);
+		acc::accumulator_set<real_t, acc::stats<acc::tag::std(acc::from_distribution),acc::tag::distribution_bincount> > matrix_element_distribution(acc::tag::distribution::binwidth=0.0001);
+
 		if( !plmDCA_options::no_coupling_output() )
 		{
 
 			// Ensure that we always get a unique output filename
-			auto couplings_file = get_unique_ofstream( alignments.front()->id_string()+(alignments.size() > 1 ? "_scan" : "")+".SuperDCA_couplings."+extension.str()+".all" );
-			//auto matrix_file = get_unique_ofstream( alignments.front()->id_string()+(alignments.size() > 1 ? "_scan" : "")+".SuperDCA_coupling_matrices."+extension.str()+".all" );
+			auto couplings_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+(alignments.size() > 1 ? ".scan" : "")+".SuperDCA_couplings."+extension.str()+".all" );
+			apegrunt::sink_ptr matrix_file;
 
-			if( couplings_file.stream()->is_open() && couplings_file.stream()->good() )
+			if( plmDCA_options::norm_of_mean_scoring() && plmDCA_options::output_parameter_matrices() )
+			{
+				matrix_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+(alignments.size() > 1 ? ".scan" : "")+".SuperDCA_coupling_matrices."+extension.str()+".all" );
+			}
+
+			if( couplings_file->stream()->is_open() && couplings_file->stream()->good() )
 			{
 				if( plmDCA_options::verbose() )
 				{
-					*plmDCA_options::out_stream() << "\nplmDCA: writing coupling values to file \"" << couplings_file.name() << "\"\n";
+					*plmDCA_options::out_stream() << "\nplmDCA: writing coupling values to file \"" << couplings_file->name() << "\"\n";
 				}
 				cputimer.start();
 
@@ -611,14 +502,14 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 
 				const std::size_t base_index = apegrunt::Apegrunt_options::get_output_indexing_base();
 
-				auto& couplings_out = *couplings_file.stream();
-				for( auto r_itr = cbegin(loci_list); r_itr != cend(loci_list); ++r_itr )
-				{
-					if( plmDCA_options::norm_of_mean_scoring() )
-					{
-						//matrixfile.precision(6); matrixfile << std::scientific;
+				auto& couplings_out = *couplings_file->stream();
 
+				if( plmDCA_options::norm_of_mean_scoring() )
+				{
+					for( auto r_itr = cbegin(loci_list); r_itr != cend(loci_list); ++r_itr )
+					{
 						couplings_out.precision(8); couplings_out << std::fixed;
+
 						const auto r = *r_itr;
 						const auto r_index = (*index_translation_dim1)[r]+base_index;
 
@@ -629,10 +520,10 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 								const auto n = *n_itr;
 								//{
 								//	const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
-								//	matrixfile << r_index << " " << (*index_translation_dim2)[n]+base_index << " " << gauge_shift(Jij) << "\n";
+								//	matrix_out << r_index << " " << (*index_translation_dim2)[n]+base_index << " " << apegrunt::ising_gauge(Jij) << "\n";
 								//}
 
-								const auto Jij_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
+								const auto Jij_norm = apegrunt::frobenius_norm( apegrunt::ising_gauge( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
 								couplings_out << Jij_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
@@ -640,23 +531,49 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 						{
 							for( auto n_itr = cbegin(loci_list); n_itr != r_itr; ++n_itr )
 							{
+								using apegrunt::operator+;
+								using apegrunt::operator*;
+								using apegrunt::operator<<;
+
 								const auto n = *n_itr;
 
-								//{
-								//	const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
-								//	const auto&& Jji = Jij_storage.get_Jij_matrix(n,r);
-								//	matrixfile << (gauge_shift(Jij) + gauge_shift(Jji))*.5 << "\n";
-								//}
+								//const auto&& Jij = Jij_storage.get_Jij_matrix(r,n);
+								//const auto&& Jji = Jij_storage.get_Jij_matrix(n,r);
 
-								const auto Jij_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(r,n) ), std::size_t(state_t::GAP) );
-								const auto Jji_norm = frobenius_norm( ising_gauge( Jij_storage.get_Jij_matrix(n,r) ), std::size_t(state_t::GAP) );
-								const auto J_norm = frobenius_norm( (ising_gauge(Jij_storage.get_Jij_matrix(r,n)) + ising_gauge(Jij_storage.get_Jij_matrix(n,r)))*0.5, std::size_t(state_t::GAP) );
+								const auto&& Jij = apegrunt::ising_gauge( apegrunt::extract<2,2>( Jij_storage.get_Jij_matrix(r,n) )() );
+								const auto&& Jji = apegrunt::ising_gauge( apegrunt::extract<2,2>( Jij_storage.get_Jij_matrix(n,r) )() );
+
+								const auto&& Jmatrix = ( Jij + Jji )*.5;
+
+								matrix_element_distribution << Jmatrix;
+
+								// matrix output
+								if( plmDCA_options::output_parameter_matrices() )
+								{
+									auto& matrix_out = *matrix_file->stream();
+									matrix_out.precision(6); matrix_out << std::scientific;
+									//using apegrunt::operator<<;
+									matrix_out << Jmatrix << "\n";
+								}
+
+								const auto Jij_norm = apegrunt::frobenius_norm( Jij, std::size_t(state_t::GAP) );
+								const auto Jji_norm = apegrunt::frobenius_norm( Jji, std::size_t(state_t::GAP) );
+								const auto J_norm = apegrunt::frobenius_norm( Jmatrix );
+								/*
+								const auto Jij_norm = apegrunt::frobenius_norm( Jij_storage.get_Jij_matrix(r,n), std::size_t(state_t::GAP) );
+								const auto Jji_norm = apegrunt::frobenius_norm( Jij_storage.get_Jij_matrix(n,r), std::size_t(state_t::GAP) );
+								const auto J_norm = apegrunt::frobenius_norm( (Jij_storage.get_Jij_matrix(r,n) + Jij_storage.get_Jij_matrix(n,r))*0.5, std::size_t(state_t::GAP) );
+								*/
+								const auto J = (Jij_norm+Jji_norm)*0.5;
+
+								coupling_distribution(J_norm);
+								//coupling_accumulator(J);
 
 								couplings_out
 									<< J_norm << " " << r_index << " " << (*index_translation_dim2)[n]+base_index
 									<< " " << Jij_norm
 									<< " " << Jji_norm
-									<< " " << (Jij_norm+Jji_norm)*0.5
+									<< " " << J
 									//<< " " << optimizer_log.fval_history[n]
 									//<< " " << optimizer_log.fval_history[r]
 									//<< " " << optimizer_log.nfeval_history[n] + optimizer_log.nfeval_history[r]
@@ -664,7 +581,10 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 							}
 						}
 					}
-					else
+				}
+				else
+				{
+					for( auto r_itr = cbegin(loci_list); r_itr != cend(loci_list); ++r_itr )
 					{
 						couplings_out.precision(8); couplings_out << std::fixed;
 						const auto r = *r_itr;
@@ -683,24 +603,54 @@ bool run_plmDCA( std::vector< apegrunt::Alignment_ptr<StateT> >& alignments, ape
 						{
 							for( auto n_itr = cbegin(loci_list); n_itr != r_itr; ++n_itr )
 							{
+								using apegrunt::operator*;
+
 								const auto n = *n_itr;
 								const auto Jij_norm = Jij_storage.get_Jij_score(r,n);
 								const auto Jji_norm = Jij_storage.get_Jij_score(n,r);
 
-								couplings_out << (Jij_norm+Jji_norm)*0.5 << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
+								const auto J = (Jij_norm+Jji_norm)*0.5;
+
+								coupling_distribution(J);
+
+								couplings_out << J << " " << r_index << " " << (*index_translation_dim2)[n]+base_index << "\n";
 							}
 						}
 					}
 				}
 				cputimer.stop(); cputimer.print_timing_stats();
+
+				cputimer.start();
+
+				// create an svg of the coupling value distribution
+				//auto svg_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+".SuperDCA_coupling_distribution.svg" );
+				//*svg_file.stream() << apegrunt::accumulators::svg(apegrunt::accumulators::distribution_ordered(coupling_distribution)) << "\n";
+				//*svg_file->stream() << apegrunt::accumulators::svg(acc::distribution(coupling_distribution)) << "\n";
+
+				// create an csv file of the coupling value distribution
+				auto csv_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+".SuperDCA_coupling_distribution.csv" );
+				//*csv_file.stream() << apegrunt::accumulators::csv(apegrunt::accumulators::distribution_ordered(coupling_distribution));
+				*csv_file->stream() << apegrunt::accumulators::csv(acc::distribution(coupling_distribution));
+
+				// create an csv file of the cumulative coupling value distribution
+				//auto ccsv_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+".SuperDCA_cumulative_coupling_distribution.csv" );
+				//*ccsv_file->stream() << apegrunt::accumulators::csv(apegrunt::accumulators::distribution_cumulative(coupling_distribution));
+
+				// output statistics of the coupling value distribution
+				plmDCA_options::out_stream()->precision(6); *plmDCA_options::out_stream() << std::scientific;
+				*plmDCA_options::out_stream() << "plmDCA: coupling value distribution mean=" << boost::accumulators::distribution_mean(coupling_distribution)
+							<< " std=" << boost::accumulators::distribution_std(coupling_distribution) << "\n";
+				if( plmDCA_options::norm_of_mean_scoring() )
+				{
+					// create an csv file of the coupling matrix element value distribution
+					auto mat_csv_file = apegrunt::get_unique_ofstream( alignments.front()->id_string()+"."+apegrunt::size_string(alignments.front())+".SuperDCA_coupling_matrix_element_distribution.csv" );
+					*mat_csv_file->stream() << apegrunt::accumulators::csv(acc::distribution(matrix_element_distribution));
+
+					*plmDCA_options::out_stream() << "plmDCA: matrix element mean=" << boost::accumulators::distribution_mean(matrix_element_distribution)
+							<< " std=" << boost::accumulators::distribution_std(matrix_element_distribution) << "\n";
+				}
+				cputimer.stop(); cputimer.print_timing_stats();
 			}
-		}
-    }
-    else
-    {
-		if( plmDCA_options::verbose() )
-		{
-			*plmDCA_options::out_stream() << "plmDCA: nothing to do\n";
 		}
     }
 
