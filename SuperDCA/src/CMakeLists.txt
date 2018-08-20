@@ -22,7 +22,6 @@ link_directories( ${Boost_LIBRARY_DIRS} )
 set( SUPERDCA_SOURCES
 	SuperDCA_options.cpp
 	plmDCA_options.cpp
-	SuperDCA_commons.cpp
 ) # *.cpp *.hpp *.cc
 
 #################################
