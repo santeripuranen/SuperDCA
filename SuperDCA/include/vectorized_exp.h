@@ -23,6 +23,8 @@
 
 #ifndef SUPERDCA_NO_VECMATHLIB
 #include "vecmathlib.h"
+#else
+#include <cmath>
 #endif
 
 namespace superdca {
@@ -34,9 +36,10 @@ namespace superdca {
 inline __m256d exp( __m256d a ) { return vecmathlib::mathfuncs< vecmathlib::realvec<double,4> >::vml_exp( a ).v; }
 inline __m256d abs( __m256d a ) { return vecmathlib::mathfuncs< vecmathlib::realvec<double,4> >::vml_fabs( a ).v; }
 #else
-// We're in a pickle
+// Fall back to serial implementation
+inline __m256d exp( __m256d a ) { using std::exp; __m256d b; for( std:size_t i = 0; i < 4; ++i ) { b[0] = exp(a[0]); } return b; }
+inline __m256d abs( __m256d a ) { using std::abs; __m256d b; for( std:size_t i = 0; i < 4; ++i ) { b[0] = abs(a[0]); } return b; }
 #endif // #ifndef SUPERDCA_NO_VECMATHLIB
-
 #endif // __AVX__
 
 #endif // #ifndef NO_INTRINSICS
