@@ -31,6 +31,7 @@
 #include "misc/Vector.h"
 
 #include "plmDCA_optimizer_parameters.hpp"
+#include "vectorized_exp.h"
 
 namespace superdca
 {
@@ -152,7 +153,7 @@ void plmDCA_objective_fval_and_gradient( ParametersT& parameters )
 		{
 			using std::log;
 			using apegrunt::sum;
-			using apegrunt::exp;
+			using superdca::exp;
 
 			const vector_view_t logPot( logPots[i].data() );
 			const auto state_r = r_states[i];
